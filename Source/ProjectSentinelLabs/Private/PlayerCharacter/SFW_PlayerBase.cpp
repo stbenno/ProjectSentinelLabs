@@ -9,6 +9,11 @@
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "InputActionValue.h"
+#include "Core/Actors/Interface/SFW_InteractableInterface.h"
+#include "Core/Components/SFW_EquipmentManagerComponent.h"
+#include "Core/Components/SFW_EquipmentManagerComponent.h"
+
+
 
 // Sets default values
 ASFW_PlayerBase::ASFW_PlayerBase()
@@ -58,7 +63,8 @@ ASFW_PlayerBase::ASFW_PlayerBase()
 	Mesh1P->CastShadow = false;
 	Mesh1P->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
-
+	// ...
+	EquipmentManager = CreateDefaultSubobject<USFW_EquipmentManagerComponent>(TEXT("EquipmentManager"));
 
 }
 
@@ -112,10 +118,17 @@ void ASFW_PlayerBase::SetupPlayerInputComponent(UInputComponent* PlayerInputComp
 			EIC->BindAction(IA_Crouch, ETriggerEvent::Completed, this, &ASFW_PlayerBase::CrouchCompleted);
 			EIC->BindAction(IA_Crouch, ETriggerEvent::Canceled, this, &ASFW_PlayerBase::CrouchCompleted);
 		}
+
+		if (IA_Interact)
+		{
+			EIC->BindAction(IA_Interact, ETriggerEvent::Started, this, &ASFW_PlayerBase::TryInteract);
+		}
+
+		if (IA_ToggleHeadLamp)
+		{
+			EIC->BindAction(IA_ToggleHeadLamp, ETriggerEvent::Started, this, &ASFW_PlayerBase::HandleToggleHeadLamp);
+		}
 	}
-
-
-	
 }
 
 void ASFW_PlayerBase::PossessedBy(AController* NewController)
@@ -211,8 +224,70 @@ void ASFW_PlayerBase::UpdateMeshVisibility()
 
 }
 
+void ASFW_PlayerBase::Server_Interact_Implementation(AActor* Target)
+{
+	if (!IsValid(Target)) return;
+	// (optional) validate range here
+
+	if (Target->GetClass()->ImplementsInterface(USFW_InteractableInterface::StaticClass()))
+	{
+		ISFW_InteractableInterface::Execute_Interact(Target, Controller); // runs on server
+	}
+}
+
+void ASFW_PlayerBase::TryInteract()
+{
+	if (!Controller) return;
+
+	FVector EyesLoc; FRotator EyesRot;
+	Controller->GetPlayerViewPoint(EyesLoc, EyesRot);
+
+	const FVector Start = EyesLoc;
+	const FVector End = Start + EyesRot.Vector() * InteractRange;
+
+	FHitResult Hit;
+	FCollisionQueryParams Params(SCENE_QUERY_STAT(InteractTrace), false, this);
+
+	if (GetWorld()->LineTraceSingleByChannel(Hit, Start, End, ECC_Visibility, Params))
+	{
+		AActor* HitActor = Hit.GetActor();                      //  declare it
+
+		if (IsValid(HitActor) &&
+			HitActor->GetClass()->ImplementsInterface(USFW_InteractableInterface::StaticClass()))
+		{
+			if (HasAuthority())
+			{
+				ISFW_InteractableInterface::Execute_Interact(HitActor, Controller);
+			}
+			else
+			{
+				Server_Interact(HitActor);                      // owning client -> server
+			}
+		}
+
+		// Safe debug
+		if (IsValid(HitActor))
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Hit: %s"), *HitActor->GetName());
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Hit: (no actor)"));
+		}
+	}
+
+	UE_LOG(LogTemp, Warning, TEXT("TryInteract pressed"));
+	DrawDebugLine(GetWorld(), Start, End, FColor::Cyan, false, 1.5f, 0, 1.f);
+}
 
 
+void ASFW_PlayerBase::HandleToggleHeadLamp(const FInputActionValue& Value)
+{
+	if (USFW_EquipmentManagerComponent* Mgr = FindComponentByClass<USFW_EquipmentManagerComponent>())
+	{
+		Mgr->Server_ToggleHeadLamp();
+	}
+}
 
 
 void ASFW_PlayerBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const

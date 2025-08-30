@@ -79,6 +79,13 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Input")
 	UInputAction* IA_Crouch = nullptr;
 
+	// SFW_PlayerBase.h
+	UPROPERTY(EditDefaultsOnly, Category = "Input")
+	UInputAction* IA_ToggleHeadLamp = nullptr;
+
+	UFUNCTION()
+	void HandleToggleHeadLamp(const FInputActionValue& Value);
+
 	// Handlers using Enhanced Input values
 	void Move(const FInputActionValue& Value);
 	void Look(const FInputActionValue& Value);
@@ -87,14 +94,20 @@ protected:
 	void CrouchStarted(const FInputActionValue& Value) { Crouch(false); ApplyMovementSpeed(); }
 	void CrouchCompleted(const FInputActionValue& Value) { UnCrouch(false); ApplyMovementSpeed(); }
 
+	// ---- Interact ----
+	UPROPERTY(EditDefaultsOnly, Category = "Input")
+	UInputAction* IA_Interact = nullptr;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Interact")
+	float InteractRange = 250.f;
+
+	UFUNCTION()
+	void TryInteract();
+
+	UFUNCTION(Server, Reliable)
+	void Server_Interact(AActor* Target);
+
 	
-
-	//Interact
-	//void Interact(); //bound on client
-
-	//UFUNCTION(Server, Reliable)
-	//void Server_Interact(const FHitResult& Hit); //Executed on server
-
 
 	
 	
@@ -107,5 +120,8 @@ public:
 
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	TObjectPtr<class USFW_EquipmentManagerComponent> EquipmentManager;
 
 };

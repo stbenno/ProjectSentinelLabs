@@ -6,6 +6,8 @@
 #include "GameFramework/GameMode.h"
 #include "SFW_GameMode.generated.h"
 
+
+class USFW_AgentCatalog;
 /**
  * 
  */
@@ -31,5 +33,13 @@ public:
 protected:
 	UPROPERTY()
 	class ASFW_AnomalyController* AnomalyController = nullptr;
+
+	// --- NEW: provide the same catalog in the match so clients can resolve icons/meshes ---
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Agents")
+	TObjectPtr<USFW_AgentCatalog> AgentCatalog = nullptr;
+
+	// --- NEW: rehydrate players’ selections on join ---
+	virtual void PostLogin(APlayerController* NewPlayer) override;
+	// --- NEW END ---
 	
 };

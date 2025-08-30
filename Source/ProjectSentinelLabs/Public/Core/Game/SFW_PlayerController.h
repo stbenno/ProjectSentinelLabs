@@ -27,6 +27,9 @@ public:
 	void RequestSetReady(bool bNewReady);
 
 protected:
+
+	virtual void BeginPlay() override;
+
 	/** Server RPC: apply character + variant on authoritative PlayerState. */
 	UFUNCTION(Server, Reliable)
 	void ServerSetCharacterAndVariant(FName InCharacterID, FName InVariantID);

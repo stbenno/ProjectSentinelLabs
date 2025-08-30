@@ -1,0 +1,420 @@
+Begin Object Class=/Script/Engine.MaterialFunction Name="MF_WallMask"
+   Begin Object Class=/Script/Engine.MaterialFunctionEditorOnlyData Name="MF_WallMaskEditorOnlyData"
+   End Object
+   Begin Object Class=/Script/Engine.MaterialExpressionCollectionParameter Name="MaterialExpressionCollectionParameter_0"
+   End Object
+   Begin Object Class=/Script/Engine.MaterialExpressionCollectionParameter Name="MaterialExpressionCollectionParameter_1"
+   End Object
+   Begin Object Class=/Script/Engine.MaterialExpressionCollectionParameter Name="MaterialExpressionCollectionParameter_10"
+   End Object
+   Begin Object Class=/Script/Engine.MaterialExpressionCollectionParameter Name="MaterialExpressionCollectionParameter_11"
+   End Object
+   Begin Object Class=/Script/Engine.MaterialExpressionCollectionParameter Name="MaterialExpressionCollectionParameter_2"
+   End Object
+   Begin Object Class=/Script/Engine.MaterialExpressionCollectionParameter Name="MaterialExpressionCollectionParameter_3"
+   End Object
+   Begin Object Class=/Script/Engine.MaterialExpressionCollectionParameter Name="MaterialExpressionCollectionParameter_4"
+   End Object
+   Begin Object Class=/Script/Engine.MaterialExpressionCollectionParameter Name="MaterialExpressionCollectionParameter_5"
+   End Object
+   Begin Object Class=/Script/Engine.MaterialExpressionCollectionParameter Name="MaterialExpressionCollectionParameter_6"
+   End Object
+   Begin Object Class=/Script/Engine.MaterialExpressionCollectionParameter Name="MaterialExpressionCollectionParameter_7"
+   End Object
+   Begin Object Class=/Script/Engine.MaterialExpressionCollectionParameter Name="MaterialExpressionCollectionParameter_8"
+   End Object
+   Begin Object Class=/Script/Engine.MaterialExpressionCollectionParameter Name="MaterialExpressionCollectionParameter_9"
+   End Object
+   Begin Object Class=/Script/Engine.MaterialExpressionComment Name="MaterialExpressionComment_0"
+   End Object
+   Begin Object Class=/Script/Engine.MaterialExpressionComment Name="MaterialExpressionComment_1"
+   End Object
+   Begin Object Class=/Script/Engine.MaterialExpressionComponentMask Name="MaterialExpressionComponentMask_0"
+   End Object
+   Begin Object Class=/Script/Engine.MaterialExpressionComponentMask Name="MaterialExpressionComponentMask_1"
+   End Object
+   Begin Object Class=/Script/Engine.MaterialExpressionComponentMask Name="MaterialExpressionComponentMask_2"
+   End Object
+   Begin Object Class=/Script/Engine.MaterialExpressionFunctionInput Name="MaterialExpressionFunctionInput_0"
+   End Object
+   Begin Object Class=/Script/Engine.MaterialExpressionFunctionOutput Name="MaterialExpressionFunctionOutput_0"
+   End Object
+   Begin Object Class=/Script/Engine.MaterialExpressionLinearInterpolate Name="MaterialExpressionLinearInterpolate_0"
+   End Object
+   Begin Object Class=/Script/Engine.MaterialExpressionLinearInterpolate Name="MaterialExpressionLinearInterpolate_1"
+   End Object
+   Begin Object Class=/Script/Engine.MaterialExpressionLinearInterpolate Name="MaterialExpressionLinearInterpolate_2"
+   End Object
+   Begin Object Class=/Script/Engine.MaterialExpressionMaterialFunctionCall Name="MaterialExpressionMaterialFunctionCall_0"
+   End Object
+   Begin Object Class=/Script/Engine.MaterialExpressionMaterialFunctionCall Name="MaterialExpressionMaterialFunctionCall_1"
+   End Object
+   Begin Object Class=/Script/Engine.MaterialExpressionMaterialFunctionCall Name="MaterialExpressionMaterialFunctionCall_2"
+   End Object
+   Begin Object Class=/Script/Engine.MaterialExpressionMultiply Name="MaterialExpressionMultiply_0"
+   End Object
+   Begin Object Class=/Script/Engine.MaterialExpressionMultiply Name="MaterialExpressionMultiply_1"
+   End Object
+   Begin Object Class=/Script/Engine.MaterialExpressionMultiply Name="MaterialExpressionMultiply_2"
+   End Object
+   Begin Object Class=/Script/Engine.MaterialExpressionPower Name="MaterialExpressionPower_0"
+   End Object
+   Begin Object Class=/Script/Engine.MaterialExpressionPower Name="MaterialExpressionPower_1"
+   End Object
+   Begin Object Class=/Script/Engine.MaterialExpressionPower Name="MaterialExpressionPower_2"
+   End Object
+   Begin Object Class=/Script/Engine.MaterialExpressionTextureObject Name="MaterialExpressionTextureObject_0"
+   End Object
+   Begin Object Class=/Script/Engine.MaterialExpressionTextureSample Name="MaterialExpressionTextureSample_0"
+   End Object
+   Begin Object Class=/Script/UnrealEd.SceneThumbnailInfoWithPrimitive Name="SceneThumbnailInfoWithPrimitive_0"
+   End Object
+   Begin Object Class=/Script/Engine.Material Name="Material_0"
+      Begin Object Class=/Script/Engine.MaterialEditorOnlyData Name="Material_0EditorOnlyData"
+      End Object
+   End Object
+   Begin Object Name="MF_WallMaskEditorOnlyData"
+      ExpressionCollection=(Expressions=(/Script/Engine.MaterialExpressionFunctionOutput'"MF_WallMask:MaterialExpressionFunctionOutput_0"',/Script/Engine.MaterialExpressionMaterialFunctionCall'"MF_WallMask:MaterialExpressionMaterialFunctionCall_0"',/Script/Engine.MaterialExpressionTextureObject'"MF_WallMask:MaterialExpressionTextureObject_0"',/Script/Engine.MaterialExpressionMaterialFunctionCall'"MF_WallMask:MaterialExpressionMaterialFunctionCall_1"',/Script/Engine.MaterialExpressionMaterialFunctionCall'"MF_WallMask:MaterialExpressionMaterialFunctionCall_2"',/Script/Engine.MaterialExpressionMultiply'"MF_WallMask:MaterialExpressionMultiply_0"',/Script/Engine.MaterialExpressionPower'"MF_WallMask:MaterialExpressionPower_0"',/Script/Engine.MaterialExpressionMultiply'"MF_WallMask:MaterialExpressionMultiply_1"',/Script/Engine.MaterialExpressionPower'"MF_WallMask:MaterialExpressionPower_1"',/Script/Engine.MaterialExpressionMultiply'"MF_WallMask:MaterialExpressionMultiply_2"',/Script/Engine.MaterialExpressionPower'"MF_WallMask:MaterialExpressionPower_2"',/Script/Engine.MaterialExpressionComponentMask'"MF_WallMask:MaterialExpressionComponentMask_0"',/Script/Engine.MaterialExpressionComponentMask'"MF_WallMask:MaterialExpressionComponentMask_1"',/Script/Engine.MaterialExpressionComponentMask'"MF_WallMask:MaterialExpressionComponentMask_2"',/Script/Engine.MaterialExpressionFunctionInput'"MF_WallMask:MaterialExpressionFunctionInput_0"',/Script/Engine.MaterialExpressionLinearInterpolate'"MF_WallMask:MaterialExpressionLinearInterpolate_0"',/Script/Engine.MaterialExpressionLinearInterpolate'"MF_WallMask:MaterialExpressionLinearInterpolate_1"',/Script/Engine.MaterialExpressionLinearInterpolate'"MF_WallMask:MaterialExpressionLinearInterpolate_2"',/Script/Engine.MaterialExpressionCollectionParameter'"MF_WallMask:MaterialExpressionCollectionParameter_0"',/Script/Engine.MaterialExpressionCollectionParameter'"MF_WallMask:MaterialExpressionCollectionParameter_1"',/Script/Engine.MaterialExpressionCollectionParameter'"MF_WallMask:MaterialExpressionCollectionParameter_2"',/Script/Engine.MaterialExpressionCollectionParameter'"MF_WallMask:MaterialExpressionCollectionParameter_3"',/Script/Engine.MaterialExpressionCollectionParameter'"MF_WallMask:MaterialExpressionCollectionParameter_4"',/Script/Engine.MaterialExpressionCollectionParameter'"MF_WallMask:MaterialExpressionCollectionParameter_5"',/Script/Engine.MaterialExpressionCollectionParameter'"MF_WallMask:MaterialExpressionCollectionParameter_6"',/Script/Engine.MaterialExpressionCollectionParameter'"MF_WallMask:MaterialExpressionCollectionParameter_7"',/Script/Engine.MaterialExpressionCollectionParameter'"MF_WallMask:MaterialExpressionCollectionParameter_8"',/Script/Engine.MaterialExpressionCollectionParameter'"MF_WallMask:MaterialExpressionCollectionParameter_9"',/Script/Engine.MaterialExpressionCollectionParameter'"MF_WallMask:MaterialExpressionCollectionParameter_10"',/Script/Engine.MaterialExpressionCollectionParameter'"MF_WallMask:MaterialExpressionCollectionParameter_11"',/Script/Engine.MaterialExpressionTextureSample'"MF_WallMask:MaterialExpressionTextureSample_0"'),EditorComments=(/Script/Engine.MaterialExpressionComment'"MF_WallMask:MaterialExpressionComment_0"',/Script/Engine.MaterialExpressionComment'"MF_WallMask:MaterialExpressionComment_1"'))
+   End Object
+   Begin Object Name="MaterialExpressionCollectionParameter_0"
+      Collection=/Script/Engine.MaterialParameterCollection'"/Game/FC_MilitaryCamp/MaskControlParameters/MPC_CliffMask.MPC_CliffMask"'
+      ParameterName="DustSize"
+      ParameterId=446CFD3E4EA7A47B4DBF8CB194FA186A
+      MaterialExpressionEditorX=-1632
+      MaterialExpressionEditorY=16
+      MaterialExpressionGuid=6D2C1A864B05603AA0FCF8897103D303
+      Function=/Script/Engine.MaterialFunction'"MF_WallMask"'
+   End Object
+   Begin Object Name="MaterialExpressionCollectionParameter_1"
+      Collection=/Script/Engine.MaterialParameterCollection'"/Game/FC_MilitaryCamp/MaskControlParameters/MPC_CliffMask.MPC_CliffMask"'
+      ParameterName="LeakSize"
+      ParameterId=9405017E4BC7B015B563A0A860DEB403
+      MaterialExpressionEditorX=-1632
+      MaterialExpressionEditorY=208
+      MaterialExpressionGuid=6D2C1A864B05603AA0FCF8897103D303
+      Function=/Script/Engine.MaterialFunction'"MF_WallMask"'
+   End Object
+   Begin Object Name="MaterialExpressionCollectionParameter_10"
+      Collection=/Script/Engine.MaterialParameterCollection'"/Game/FC_MilitaryCamp/MaskControlParameters/MPC_CliffMask.MPC_CliffMask"'
+      ParameterName="DustColor"
+      ParameterId=FCCB09AA4F5B5D318C26DE931294E3BA
+      MaterialExpressionEditorX=-528
+      MaterialExpressionEditorY=-336
+      MaterialExpressionGuid=6D2C1A864B05603AA0FCF8897103D303
+      Function=/Script/Engine.MaterialFunction'"MF_WallMask"'
+   End Object
+   Begin Object Name="MaterialExpressionCollectionParameter_11"
+      Collection=/Script/Engine.MaterialParameterCollection'"/Game/FC_MilitaryCamp/MaskControlParameters/MPC_CliffMask.MPC_CliffMask"'
+      ParameterName="GrungeColor"
+      ParameterId=82F1F7E74EFE375682012390F5565AFF
+      MaterialExpressionEditorX=-528
+      MaterialExpressionEditorY=-160
+      MaterialExpressionGuid=6D2C1A864B05603AA0FCF8897103D303
+      Function=/Script/Engine.MaterialFunction'"MF_WallMask"'
+   End Object
+   Begin Object Name="MaterialExpressionCollectionParameter_2"
+      Collection=/Script/Engine.MaterialParameterCollection'"/Game/FC_MilitaryCamp/MaskControlParameters/MPC_CliffMask.MPC_CliffMask"'
+      ParameterName="GrungeSize"
+      ParameterId=5823AA254846889EEDEE4A8CC281F680
+      MaterialExpressionEditorX=-1632
+      MaterialExpressionEditorY=368
+      MaterialExpressionGuid=6D2C1A864B05603AA0FCF8897103D303
+      Function=/Script/Engine.MaterialFunction'"MF_WallMask"'
+   End Object
+   Begin Object Name="MaterialExpressionCollectionParameter_3"
+      Collection=/Script/Engine.MaterialParameterCollection'"/Game/FC_MilitaryCamp/MaskControlParameters/MPC_CliffMask.MPC_CliffMask"'
+      ParameterName="LeakInt"
+      ParameterId=D5FF13D1484FAAB9B55727BE0BEF0D3F
+      MaterialExpressionEditorX=-1632
+      MaterialExpressionEditorY=560
+      MaterialExpressionGuid=6D2C1A864B05603AA0FCF8897103D303
+      Function=/Script/Engine.MaterialFunction'"MF_WallMask"'
+   End Object
+   Begin Object Name="MaterialExpressionCollectionParameter_4"
+      Collection=/Script/Engine.MaterialParameterCollection'"/Game/FC_MilitaryCamp/MaskControlParameters/MPC_CliffMask.MPC_CliffMask"'
+      ParameterName="LeakPov"
+      ParameterId=A7D3C20E4B9DE5C55BE47BACAE8F7708
+      MaterialExpressionEditorX=-1632
+      MaterialExpressionEditorY=736
+      MaterialExpressionGuid=6D2C1A864B05603AA0FCF8897103D303
+      Function=/Script/Engine.MaterialFunction'"MF_WallMask"'
+   End Object
+   Begin Object Name="MaterialExpressionCollectionParameter_5"
+      Collection=/Script/Engine.MaterialParameterCollection'"/Game/FC_MilitaryCamp/MaskControlParameters/MPC_CliffMask.MPC_CliffMask"'
+      ParameterName="DustInt"
+      ParameterId=1B616C774C38A00B72AAC9A04B9FCA46
+      MaterialExpressionEditorX=-1632
+      MaterialExpressionEditorY=912
+      MaterialExpressionGuid=6D2C1A864B05603AA0FCF8897103D303
+      Function=/Script/Engine.MaterialFunction'"MF_WallMask"'
+   End Object
+   Begin Object Name="MaterialExpressionCollectionParameter_6"
+      Collection=/Script/Engine.MaterialParameterCollection'"/Game/FC_MilitaryCamp/MaskControlParameters/MPC_CliffMask.MPC_CliffMask"'
+      ParameterName="DustPov"
+      ParameterId=2C0F679F4E1F6E71B64236ADE5BA5DFF
+      MaterialExpressionEditorX=-1632
+      MaterialExpressionEditorY=1088
+      MaterialExpressionGuid=6D2C1A864B05603AA0FCF8897103D303
+      Function=/Script/Engine.MaterialFunction'"MF_WallMask"'
+   End Object
+   Begin Object Name="MaterialExpressionCollectionParameter_7"
+      Collection=/Script/Engine.MaterialParameterCollection'"/Game/FC_MilitaryCamp/MaskControlParameters/MPC_CliffMask.MPC_CliffMask"'
+      ParameterName="GrungeInt"
+      ParameterId=3D4BCFDD4559800C0AC123826792808A
+      MaterialExpressionEditorX=-1632
+      MaterialExpressionEditorY=1248
+      MaterialExpressionGuid=6D2C1A864B05603AA0FCF8897103D303
+      Function=/Script/Engine.MaterialFunction'"MF_WallMask"'
+   End Object
+   Begin Object Name="MaterialExpressionCollectionParameter_8"
+      Collection=/Script/Engine.MaterialParameterCollection'"/Game/FC_MilitaryCamp/MaskControlParameters/MPC_CliffMask.MPC_CliffMask"'
+      ParameterName="GrungePov"
+      ParameterId=C89CDA304AE4A766AD9CEE9715ED42D5
+      MaterialExpressionEditorX=-1632
+      MaterialExpressionEditorY=1424
+      MaterialExpressionGuid=6D2C1A864B05603AA0FCF8897103D303
+      Function=/Script/Engine.MaterialFunction'"MF_WallMask"'
+   End Object
+   Begin Object Name="MaterialExpressionCollectionParameter_9"
+      Collection=/Script/Engine.MaterialParameterCollection'"/Game/FC_MilitaryCamp/MaskControlParameters/MPC_CliffMask.MPC_CliffMask"'
+      ParameterName="LeakColor"
+      ParameterId=5BFD7C4C40A9B54F271C1D84E3B08B64
+      MaterialExpressionEditorX=-528
+      MaterialExpressionEditorY=-512
+      MaterialExpressionGuid=6D2C1A864B05603AA0FCF8897103D303
+      Function=/Script/Engine.MaterialFunction'"MF_WallMask"'
+   End Object
+   Begin Object Name="MaterialExpressionComment_0"
+      SizeX=325
+      SizeY=758
+      Text="Colors"
+      MaterialExpressionEditorX=-594
+      MaterialExpressionEditorY=-722
+      MaterialExpressionGuid=446FB37E48F1F66BEF5078AEA715A15C
+      Function=/Script/Engine.MaterialFunction'"MF_WallMask"'
+   End Object
+   Begin Object Name="MaterialExpressionComment_1"
+      SizeX=1316
+      SizeY=815
+      Text="MaskParameters"
+      MaterialExpressionEditorX=-1314
+      MaterialExpressionEditorY=126
+      MaterialExpressionGuid=1D6FCD3A408AC13F970BB3A635653A30
+      Function=/Script/Engine.MaterialFunction'"MF_WallMask"'
+   End Object
+   Begin Object Name="MaterialExpressionComponentMask_0"
+      Input=(Expression=/Script/Engine.MaterialExpressionMaterialFunctionCall'"MF_WallMask:MaterialExpressionMaterialFunctionCall_0"',OutputIndex=2)
+      R=True
+      MaterialExpressionEditorX=-560
+      MaterialExpressionEditorY=672
+      MaterialExpressionGuid=57840D214BF0E9195D16A595A76BA4F2
+      Function=/Script/Engine.MaterialFunction'"MF_WallMask"'
+   End Object
+   Begin Object Name="MaterialExpressionComponentMask_1"
+      Input=(Expression=/Script/Engine.MaterialExpressionMaterialFunctionCall'"MF_WallMask:MaterialExpressionMaterialFunctionCall_1"',OutputIndex=2)
+      G=True
+      MaterialExpressionEditorX=-592
+      MaterialExpressionEditorY=240
+      MaterialExpressionGuid=57840D214BF0E9195D16A595A76BA4F2
+      Function=/Script/Engine.MaterialFunction'"MF_WallMask"'
+   End Object
+   Begin Object Name="MaterialExpressionComponentMask_2"
+      Input=(Expression=/Script/Engine.MaterialExpressionMaterialFunctionCall'"MF_WallMask:MaterialExpressionMaterialFunctionCall_2"',OutputIndex=2)
+      B=True
+      MaterialExpressionEditorX=-560
+      MaterialExpressionEditorY=464
+      MaterialExpressionGuid=57840D214BF0E9195D16A595A76BA4F2
+      Function=/Script/Engine.MaterialFunction'"MF_WallMask"'
+   End Object
+   Begin Object Name="MaterialExpressionFunctionInput_0"
+      Preview=(Expression=/Script/Engine.MaterialExpressionTextureSample'"MF_WallMask:MaterialExpressionTextureSample_0"',OutputIndex=5,Mask=1,MaskR=1,MaskG=1,MaskB=1,MaskA=1)
+      InputName="BaseColor"
+      Id=A88EC14E4CAC6FE10086369587E1A0B9
+      InputType=FunctionInput_Vector4
+      MaterialExpressionEditorX=-528
+      MaterialExpressionEditorY=-672
+      MaterialExpressionGuid=90C14DA24871997E952BBAA418C62EE6
+      Function=/Script/Engine.MaterialFunction'"MF_WallMask"'
+   End Object
+   Begin Object Name="MaterialExpressionFunctionOutput_0"
+      OutputName="BaseColorOutput"
+      A=(Expression=/Script/Engine.MaterialExpressionLinearInterpolate'"MF_WallMask:MaterialExpressionLinearInterpolate_2"')
+      bLastPreviewed=True
+      Id=8470992542A4308BFA076BBF84823F29
+      MaterialExpressionEditorX=576
+      MaterialExpressionEditorY=208
+      MaterialExpressionGuid=F5F37D3F4B77D83919087C9C8A5E3E05
+      Function=/Script/Engine.MaterialFunction'"MF_WallMask"'
+   End Object
+   Begin Object Name="MaterialExpressionLinearInterpolate_0"
+      A=(Expression=/Script/Engine.MaterialExpressionFunctionInput'"MF_WallMask:MaterialExpressionFunctionInput_0"')
+      B=(Expression=/Script/Engine.MaterialExpressionCollectionParameter'"MF_WallMask:MaterialExpressionCollectionParameter_9"')
+      Alpha=(Expression=/Script/Engine.MaterialExpressionPower'"MF_WallMask:MaterialExpressionPower_0"')
+      MaterialExpressionEditorX=128
+      MaterialExpressionEditorY=-176
+      MaterialExpressionGuid=8DCEB1DA4835D26C7BA6A9AA433A3EC8
+      Function=/Script/Engine.MaterialFunction'"MF_WallMask"'
+   End Object
+   Begin Object Name="MaterialExpressionLinearInterpolate_1"
+      A=(Expression=/Script/Engine.MaterialExpressionLinearInterpolate'"MF_WallMask:MaterialExpressionLinearInterpolate_0"')
+      B=(Expression=/Script/Engine.MaterialExpressionCollectionParameter'"MF_WallMask:MaterialExpressionCollectionParameter_10"')
+      Alpha=(Expression=/Script/Engine.MaterialExpressionPower'"MF_WallMask:MaterialExpressionPower_1"')
+      MaterialExpressionEditorX=176
+      MaterialExpressionEditorY=-32
+      MaterialExpressionGuid=8DCEB1DA4835D26C7BA6A9AA433A3EC8
+      Function=/Script/Engine.MaterialFunction'"MF_WallMask"'
+   End Object
+   Begin Object Name="MaterialExpressionLinearInterpolate_2"
+      A=(Expression=/Script/Engine.MaterialExpressionLinearInterpolate'"MF_WallMask:MaterialExpressionLinearInterpolate_1"')
+      B=(Expression=/Script/Engine.MaterialExpressionCollectionParameter'"MF_WallMask:MaterialExpressionCollectionParameter_11"')
+      Alpha=(Expression=/Script/Engine.MaterialExpressionPower'"MF_WallMask:MaterialExpressionPower_2"')
+      MaterialExpressionEditorX=272
+      MaterialExpressionEditorY=112
+      MaterialExpressionGuid=8DCEB1DA4835D26C7BA6A9AA433A3EC8
+      Function=/Script/Engine.MaterialFunction'"MF_WallMask"'
+   End Object
+   Begin Object Name="MaterialExpressionMaterialFunctionCall_0"
+      MaterialFunction=/Script/Engine.MaterialFunction'"/Engine/Functions/Engine_MaterialFunctions01/Texturing/WorldAlignedTexture.WorldAlignedTexture"'
+      FunctionInputs(0)=(ExpressionInputId=4EE64DD049AC714D089AD6AAB1BFA0C8,Input=(Expression=/Script/Engine.MaterialExpressionTextureObject'"MF_WallMask:MaterialExpressionTextureObject_0"',InputName="TextureObject"))
+      FunctionInputs(1)=(ExpressionInputId=2C710AD6489D7B7213E379AD4846EBBB,Input=(Expression=/Script/Engine.MaterialExpressionCollectionParameter'"MF_WallMask:MaterialExpressionCollectionParameter_2"',InputName="TextureSize"))
+      FunctionInputs(2)=(ExpressionInputId=F9CEA7574004FF6704D0C5B341DB8F50,Input=(OutputIndex=-1,InputName="WorldPosition"))
+      FunctionInputs(3)=(ExpressionInputId=041C58BB4D6D46D766DE40A41673ECD6,Input=(OutputIndex=-1,InputName="Export Float 4"))
+      FunctionInputs(4)=(ExpressionInputId=ABB498D643904DF08C37A0B911766DDB,Input=(OutputIndex=-1,InputName="World Space Normal"))
+      FunctionInputs(5)=(ExpressionInputId=D2134BC94ED09D2F619E9DBED3E550CD,Input=(OutputIndex=-1,InputName="ProjectionTransitionContrast"))
+      FunctionOutputs(0)=(ExpressionOutputId=C73948F34CBC303FB1D8F3A99E6B0324,Output=(OutputName="XY Texture"))
+      FunctionOutputs(1)=(ExpressionOutputId=DC35E13448C6765AA54072B08874BFD4,Output=(OutputName="Z Texture"))
+      FunctionOutputs(2)=(ExpressionOutputId=1B6AC1E04D115FD30866E4A895261285,Output=(OutputName="XYZ Texture"))
+      MaterialExpressionEditorX=-976
+      MaterialExpressionEditorY=176
+      MaterialExpressionGuid=B18123F84653D33B83E938AC06DE5938
+      Function=/Script/Engine.MaterialFunction'"MF_WallMask"'
+      Outputs(0)=(OutputName="XY Texture")
+      Outputs(1)=(OutputName="Z Texture")
+      Outputs(2)=(OutputName="XYZ Texture")
+   End Object
+   Begin Object Name="MaterialExpressionMaterialFunctionCall_1"
+      MaterialFunction=/Script/Engine.MaterialFunction'"/Engine/Functions/Engine_MaterialFunctions01/Texturing/WorldAlignedTexture.WorldAlignedTexture"'
+      FunctionInputs(0)=(ExpressionInputId=4EE64DD049AC714D089AD6AAB1BFA0C8,Input=(Expression=/Script/Engine.MaterialExpressionTextureObject'"MF_WallMask:MaterialExpressionTextureObject_0"',InputName="TextureObject"))
+      FunctionInputs(1)=(ExpressionInputId=2C710AD6489D7B7213E379AD4846EBBB,Input=(Expression=/Script/Engine.MaterialExpressionCollectionParameter'"MF_WallMask:MaterialExpressionCollectionParameter_1"',InputName="TextureSize"))
+      FunctionInputs(2)=(ExpressionInputId=F9CEA7574004FF6704D0C5B341DB8F50,Input=(OutputIndex=-1,InputName="WorldPosition"))
+      FunctionInputs(3)=(ExpressionInputId=041C58BB4D6D46D766DE40A41673ECD6,Input=(OutputIndex=-1,InputName="Export Float 4"))
+      FunctionInputs(4)=(ExpressionInputId=ABB498D643904DF08C37A0B911766DDB,Input=(OutputIndex=-1,InputName="World Space Normal"))
+      FunctionInputs(5)=(ExpressionInputId=D2134BC94ED09D2F619E9DBED3E550CD,Input=(OutputIndex=-1,InputName="ProjectionTransitionContrast"))
+      FunctionOutputs(0)=(ExpressionOutputId=C73948F34CBC303FB1D8F3A99E6B0324,Output=(OutputName="XY Texture"))
+      FunctionOutputs(1)=(ExpressionOutputId=DC35E13448C6765AA54072B08874BFD4,Output=(OutputName="Z Texture"))
+      FunctionOutputs(2)=(ExpressionOutputId=1B6AC1E04D115FD30866E4A895261285,Output=(OutputName="XYZ Texture"))
+      MaterialExpressionEditorX=-960
+      MaterialExpressionEditorY=384
+      MaterialExpressionGuid=B18123F84653D33B83E938AC06DE5938
+      Function=/Script/Engine.MaterialFunction'"MF_WallMask"'
+      Outputs(0)=(OutputName="XY Texture")
+      Outputs(1)=(OutputName="Z Texture")
+      Outputs(2)=(OutputName="XYZ Texture")
+   End Object
+   Begin Object Name="MaterialExpressionMaterialFunctionCall_2"
+      MaterialFunction=/Script/Engine.MaterialFunction'"/Engine/Functions/Engine_MaterialFunctions01/Texturing/WorldAlignedTexture.WorldAlignedTexture"'
+      FunctionInputs(0)=(ExpressionInputId=4EE64DD049AC714D089AD6AAB1BFA0C8,Input=(Expression=/Script/Engine.MaterialExpressionTextureObject'"MF_WallMask:MaterialExpressionTextureObject_0"',InputName="TextureObject"))
+      FunctionInputs(1)=(ExpressionInputId=2C710AD6489D7B7213E379AD4846EBBB,Input=(Expression=/Script/Engine.MaterialExpressionCollectionParameter'"MF_WallMask:MaterialExpressionCollectionParameter_0"',InputName="TextureSize"))
+      FunctionInputs(2)=(ExpressionInputId=F9CEA7574004FF6704D0C5B341DB8F50,Input=(OutputIndex=-1,InputName="WorldPosition"))
+      FunctionInputs(3)=(ExpressionInputId=041C58BB4D6D46D766DE40A41673ECD6,Input=(OutputIndex=-1,InputName="Export Float 4"))
+      FunctionInputs(4)=(ExpressionInputId=ABB498D643904DF08C37A0B911766DDB,Input=(OutputIndex=-1,InputName="World Space Normal"))
+      FunctionInputs(5)=(ExpressionInputId=D2134BC94ED09D2F619E9DBED3E550CD,Input=(OutputIndex=-1,InputName="ProjectionTransitionContrast"))
+      FunctionOutputs(0)=(ExpressionOutputId=C73948F34CBC303FB1D8F3A99E6B0324,Output=(OutputName="XY Texture"))
+      FunctionOutputs(1)=(ExpressionOutputId=DC35E13448C6765AA54072B08874BFD4,Output=(OutputName="Z Texture"))
+      FunctionOutputs(2)=(ExpressionOutputId=1B6AC1E04D115FD30866E4A895261285,Output=(OutputName="XYZ Texture"))
+      MaterialExpressionEditorX=-1056
+      MaterialExpressionEditorY=608
+      MaterialExpressionGuid=B18123F84653D33B83E938AC06DE5938
+      Function=/Script/Engine.MaterialFunction'"MF_WallMask"'
+      Outputs(0)=(OutputName="XY Texture")
+      Outputs(1)=(OutputName="Z Texture")
+      Outputs(2)=(OutputName="XYZ Texture")
+   End Object
+   Begin Object Name="MaterialExpressionMultiply_0"
+      A=(Expression=/Script/Engine.MaterialExpressionComponentMask'"MF_WallMask:MaterialExpressionComponentMask_1"')
+      B=(Expression=/Script/Engine.MaterialExpressionCollectionParameter'"MF_WallMask:MaterialExpressionCollectionParameter_3"')
+      MaterialExpressionEditorX=-336
+      MaterialExpressionEditorY=176
+      MaterialExpressionGuid=F1D728374DE2F1DA8D215CA3C9C381B1
+      Function=/Script/Engine.MaterialFunction'"MF_WallMask"'
+   End Object
+   Begin Object Name="MaterialExpressionMultiply_1"
+      A=(Expression=/Script/Engine.MaterialExpressionComponentMask'"MF_WallMask:MaterialExpressionComponentMask_2"')
+      B=(Expression=/Script/Engine.MaterialExpressionCollectionParameter'"MF_WallMask:MaterialExpressionCollectionParameter_5"')
+      MaterialExpressionEditorX=-304
+      MaterialExpressionEditorY=432
+      MaterialExpressionGuid=F1D728374DE2F1DA8D215CA3C9C381B1
+      Function=/Script/Engine.MaterialFunction'"MF_WallMask"'
+   End Object
+   Begin Object Name="MaterialExpressionMultiply_2"
+      A=(Expression=/Script/Engine.MaterialExpressionComponentMask'"MF_WallMask:MaterialExpressionComponentMask_0"')
+      B=(Expression=/Script/Engine.MaterialExpressionCollectionParameter'"MF_WallMask:MaterialExpressionCollectionParameter_7"')
+      MaterialExpressionEditorX=-304
+      MaterialExpressionEditorY=688
+      MaterialExpressionGuid=F1D728374DE2F1DA8D215CA3C9C381B1
+      Function=/Script/Engine.MaterialFunction'"MF_WallMask"'
+   End Object
+   Begin Object Name="MaterialExpressionPower_0"
+      Base=(Expression=/Script/Engine.MaterialExpressionMultiply'"MF_WallMask:MaterialExpressionMultiply_0"')
+      Exponent=(Expression=/Script/Engine.MaterialExpressionCollectionParameter'"MF_WallMask:MaterialExpressionCollectionParameter_4"')
+      MaterialExpressionEditorX=-169
+      MaterialExpressionEditorY=181
+      MaterialExpressionGuid=1004824749447B9DEAA7BC80DBC28C22
+      Function=/Script/Engine.MaterialFunction'"MF_WallMask"'
+   End Object
+   Begin Object Name="MaterialExpressionPower_1"
+      Base=(Expression=/Script/Engine.MaterialExpressionMultiply'"MF_WallMask:MaterialExpressionMultiply_1"')
+      Exponent=(Expression=/Script/Engine.MaterialExpressionCollectionParameter'"MF_WallMask:MaterialExpressionCollectionParameter_6"')
+      MaterialExpressionEditorX=-144
+      MaterialExpressionEditorY=432
+      MaterialExpressionGuid=1004824749447B9DEAA7BC80DBC28C22
+      Function=/Script/Engine.MaterialFunction'"MF_WallMask"'
+   End Object
+   Begin Object Name="MaterialExpressionPower_2"
+      Base=(Expression=/Script/Engine.MaterialExpressionMultiply'"MF_WallMask:MaterialExpressionMultiply_2"')
+      Exponent=(Expression=/Script/Engine.MaterialExpressionCollectionParameter'"MF_WallMask:MaterialExpressionCollectionParameter_8"')
+      MaterialExpressionEditorX=-144
+      MaterialExpressionEditorY=688
+      MaterialExpressionGuid=1004824749447B9DEAA7BC80DBC28C22
+      Function=/Script/Engine.MaterialFunction'"MF_WallMask"'
+   End Object
+   Begin Object Name="MaterialExpressionTextureObject_0"
+      Texture=/Script/Engine.Texture2D'"/Game/FC_MilitaryCamp/Textures/T_WallMask_RGB.T_WallMask_RGB"'
+      MaterialExpressionEditorX=-1264
+      MaterialExpressionEditorY=176
+      MaterialExpressionGuid=6CACFCFB4D3CE4556C3E6089E079B863
+      Function=/Script/Engine.MaterialFunction'"MF_WallMask"'
+   End Object
+   Begin Object Name="MaterialExpressionTextureSample_0"
+      Texture=/Script/Engine.Texture2D'"/Game/FC_MilitaryCamp/Textures/T_BaseTexture_BC.T_BaseTexture_BC"'
+      MaterialExpressionEditorX=-816
+      MaterialExpressionEditorY=-640
+      MaterialExpressionGuid=C54829664D5B987B6FE7B19CD2140D78
+      Function=/Script/Engine.MaterialFunction'"MF_WallMask"'
+   End Object
+   Begin Object Name="SceneThumbnailInfoWithPrimitive_0"
+   End Object
+   Begin Object Name="Material_0"
+      Begin Object Name="Material_0EditorOnlyData"
+         EmissiveColor=(Expression=/Script/Engine.MaterialExpressionFunctionOutput'"MF_WallMask:MaterialExpressionFunctionOutput_0"')
+         ExpressionCollection=(Expressions=(/Script/Engine.MaterialExpressionFunctionOutput'"MF_WallMask:MaterialExpressionFunctionOutput_0"',/Script/Engine.MaterialExpressionMaterialFunctionCall'"MF_WallMask:MaterialExpressionMaterialFunctionCall_0"',/Script/Engine.MaterialExpressionTextureObject'"MF_WallMask:MaterialExpressionTextureObject_0"',/Script/Engine.MaterialExpressionMaterialFunctionCall'"MF_WallMask:MaterialExpressionMaterialFunctionCall_1"',/Script/Engine.MaterialExpressionMaterialFunctionCall'"MF_WallMask:MaterialExpressionMaterialFunctionCall_2"',/Script/Engine.MaterialExpressionMultiply'"MF_WallMask:MaterialExpressionMultiply_0"',/Script/Engine.MaterialExpressionPower'"MF_WallMask:MaterialExpressionPower_0"',/Script/Engine.MaterialExpressionMultiply'"MF_WallMask:MaterialExpressionMultiply_1"',/Script/Engine.MaterialExpressionPower'"MF_WallMask:MaterialExpressionPower_1"',/Script/Engine.MaterialExpressionMultiply'"MF_WallMask:MaterialExpressionMultiply_2"',/Script/Engine.MaterialExpressionPower'"MF_WallMask:MaterialExpressionPower_2"',/Script/Engine.MaterialExpressionComponentMask'"MF_WallMask:MaterialExpressionComponentMask_0"',/Script/Engine.MaterialExpressionComponentMask'"MF_WallMask:MaterialExpressionComponentMask_1"',/Script/Engine.MaterialExpressionComponentMask'"MF_WallMask:MaterialExpressionComponentMask_2"',/Script/Engine.MaterialExpressionFunctionInput'"MF_WallMask:MaterialExpressionFunctionInput_0"',/Script/Engine.MaterialExpressionLinearInterpolate'"MF_WallMask:MaterialExpressionLinearInterpolate_0"',/Script/Engine.MaterialExpressionLinearInterpolate'"MF_WallMask:MaterialExpressionLinearInterpolate_1"',/Script/Engine.MaterialExpressionLinearInterpolate'"MF_WallMask:MaterialExpressionLinearInterpolate_2"',/Script/Engine.MaterialExpressionCollectionParameter'"MF_WallMask:MaterialExpressionCollectionParameter_0"',/Script/Engine.MaterialExpressionCollectionParameter'"MF_WallMask:MaterialExpressionCollectionParameter_1"',/Script/Engine.MaterialExpressionCollectionParameter'"MF_WallMask:MaterialExpressionCollectionParameter_2"',/Script/Engine.MaterialExpressionCollectionParameter'"MF_WallMask:MaterialExpressionCollectionParameter_3"',/Script/Engine.MaterialExpressionCollectionParameter'"MF_WallMask:MaterialExpressionCollectionParameter_4"',/Script/Engine.MaterialExpressionCollectionParameter'"MF_WallMask:MaterialExpressionCollectionParameter_5"',/Script/Engine.MaterialExpressionCollectionParameter'"MF_WallMask:MaterialExpressionCollectionParameter_6"',/Script/Engine.MaterialExpressionCollectionParameter'"MF_WallMask:MaterialExpressionCollectionParameter_7"',/Script/Engine.MaterialExpressionCollectionParameter'"MF_WallMask:MaterialExpressionCollectionParameter_8"',/Script/Engine.MaterialExpressionCollectionParameter'"MF_WallMask:MaterialExpressionCollectionParameter_9"',/Script/Engine.MaterialExpressionCollectionParameter'"MF_WallMask:MaterialExpressionCollectionParameter_10"',/Script/Engine.MaterialExpressionCollectionParameter'"MF_WallMask:MaterialExpressionCollectionParameter_11"',/Script/Engine.MaterialExpressionTextureSample'"MF_WallMask:MaterialExpressionTextureSample_0"'),EditorComments=(/Script/Engine.MaterialExpressionComment'"MF_WallMask:MaterialExpressionComment_0"',/Script/Engine.MaterialExpressionComment'"MF_WallMask:MaterialExpressionComment_1"'))
+      End Object
+      ShadingModel=MSM_Unlit
+      ShadingModels=(ShadingModelField=1)
+      bCanMaskedBeAssumedOpaque=True
+      StateId=B6EFA0FB44421E71FC9FE8840A859268
+      ReferencedTextureGuids(0)=64264A0A40C88277090F03BF4DAB8169
+      ReferencedTextureGuids(1)=A0BCA6A844B77A7676A8168D8A8A3E1F
+      EditorOnlyData=/Script/Engine.MaterialEditorOnlyData'"Material_0EditorOnlyData"'
+      ThumbnailInfo=/Script/UnrealEd.SceneThumbnailInfoWithPrimitive'"MF_WallMask:SceneThumbnailInfoWithPrimitive_0"'
+      LightingGuid=E11814594439F84245B8D5B6338BEB9F
+   End Object
+   DependentFunctionExpressionCandidates(0)=/Script/Engine.MaterialExpressionMaterialFunctionCall'"MaterialExpressionMaterialFunctionCall_0"'
+   DependentFunctionExpressionCandidates(1)=/Script/Engine.MaterialExpressionMaterialFunctionCall'"MaterialExpressionMaterialFunctionCall_1"'
+   DependentFunctionExpressionCandidates(2)=/Script/Engine.MaterialExpressionMaterialFunctionCall'"MaterialExpressionMaterialFunctionCall_2"'
+   EditorOnlyData=/Script/Engine.MaterialFunctionEditorOnlyData'"MF_WallMaskEditorOnlyData"'
+   StateId=4D7AF2034E050C51FA2353A96EA3E674
+   CombinedInputTypes=8
+   CombinedOutputTypes=15
+   ThumbnailInfo=/Script/UnrealEd.SceneThumbnailInfoWithPrimitive'"SceneThumbnailInfoWithPrimitive_0"'
+End Object

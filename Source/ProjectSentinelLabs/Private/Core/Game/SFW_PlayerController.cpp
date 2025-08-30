@@ -5,6 +5,19 @@
 
 #include "Core/Game/SFW_PlayerState.h"
 
+void ASFW_PlayerController::BeginPlay()
+{
+	Super::BeginPlay();
+
+	// Force focus back to the game when a match map loads
+	FInputModeGameOnly InputMode;
+	SetInputMode(InputMode);
+	bShowMouseCursor = false;
+
+	SetIgnoreLookInput(false);
+	SetIgnoreMoveInput(false);
+}
+
 void ASFW_PlayerController::RequestSetCharacterAndVariant(FName InCharacterID, FName InVariantID)
 {
 	if (IsLocalController())
@@ -20,6 +33,8 @@ void ASFW_PlayerController::RequestSetReady(bool bNewReady)
 		ServerSetIsReady(bNewReady);
 	}
 }
+
+
 
 void ASFW_PlayerController::ServerSetCharacterAndVariant_Implementation(FName InCharacterID, FName InVariantID)
 {
