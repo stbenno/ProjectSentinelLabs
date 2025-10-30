@@ -19,20 +19,26 @@ protected:
 	TObjectPtr<USkeletalMeshComponent> Mesh;
 
 public:
-	// Called by the manager when this becomes the active hand item
 	virtual void OnEquipped(ACharacter* NewOwnerChar);
-
-	// Called by the manager when it is put away / unequipped
 	virtual void OnUnequipped();
 
-	// Input hooks (no behavior yet)
+	// Primary / secondary use hooks (flashlight toggle, etc)
 	virtual void PrimaryUse() {}
 	virtual void SecondaryUse() {}
 
 	USkeletalMeshComponent* GetMesh() const { return Mesh; }
 
 protected:
-	// Basic attach/detach helpers
 	void AttachToCharacter(ACharacter* Char, FName Socket);
 	void DetachFromCharacter();
+
+	// Default attach point for handhelds; subclasses can override.
+	virtual FName GetAttachSocketName() const { return TEXT("hand_R_Tool"); }
+
+public:
+	// Does having this item in inventory grant access to long-range radio comms?
+	// Default false. Walkie subclass will override to true.
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Voice")
+	bool GrantsRadioComms() const;
+	virtual bool GrantsRadioComms_Implementation() const { return false; }
 };

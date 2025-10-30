@@ -19,8 +19,10 @@ public class ProjectSentinelLabs : ModuleRules
 			"GameplayStateTreeModule",
 			"UMG",
 			"Slate",
-			"NavigationSystem"
-		});
+			"NavigationSystem",
+            "AnimGraphRuntime"
+
+        });
 
 		PrivateDependencyModuleNames.AddRange(new string[] { });
 

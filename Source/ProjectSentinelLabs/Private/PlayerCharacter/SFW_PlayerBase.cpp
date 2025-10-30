@@ -9,23 +9,19 @@
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "InputActionValue.h"
+#include "GameFramework/Controller.h"
 #include "Core/Actors/Interface/SFW_InteractableInterface.h"
 #include "Core/Components/SFW_EquipmentManagerComponent.h"
-#include "Core/Components/SFW_EquipmentManagerComponent.h"
-
-
+#include "Core/Interact/SFW_InteractionComponent.h"
 
 // Sets default values
 ASFW_PlayerBase::ASFW_PlayerBase()
 {
- 	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
 	bReplicates = true;
-	//bReplicateMovement = true;
 
-	//Capsule
-
+	// Capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.f);
 
 	// FPS style rotation
@@ -34,28 +30,26 @@ ASFW_PlayerBase::ASFW_PlayerBase()
 	bUseControllerRotationRoll = false;
 	GetCharacterMovement()->bOrientRotationToMovement = false;
 
-	//Movement Speed
+	// Movement Speed
 	GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
 	bIsCrouched = false;
 
-	//Enable Crouch
+	// Enable crouch
 	GetCharacterMovement()->NavAgentProps.bCanCrouch = true;
-	//GetCharacterMovement()->CrouchedHalfHeight = 60.f; //default 60, may tweak if needed
 
-	//Camera
+	// Camera
 	FirstPersonCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FirstPersonCamera"));
 	FirstPersonCamera->SetupAttachment(GetCapsuleComponent());
 	FirstPersonCamera->bUsePawnControlRotation = true;
 	FirstPersonCamera->SetRelativeLocation(FVector(0.f, 0.f, 64.f));
 
-	//Use built in mesh as 3P full body (what other players will see)
+	// 3P mesh (body others see)
 	USkeletalMeshComponent* Mesh3P = GetMesh();
-	Mesh3P->SetRelativeLocation(FVector(0.f, 0.f, -96.f)); //align to capsule
+	Mesh3P->SetRelativeLocation(FVector(0.f, 0.f, -96.f)); // align to capsule
 	Mesh3P->SetOwnerNoSee(true);
 	Mesh3P->SetCastHiddenShadow(true);
 
-	//FirstPerson Arms (local)
-
+	// 1P arms (local only)
 	Mesh1P = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("Mesh1P_Arms"));
 	Mesh1P->SetupAttachment(FirstPersonCamera);
 	Mesh1P->SetOnlyOwnerSee(true);
@@ -63,18 +57,17 @@ ASFW_PlayerBase::ASFW_PlayerBase()
 	Mesh1P->CastShadow = false;
 	Mesh1P->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
-	// ...
+	// Gear + interact
 	EquipmentManager = CreateDefaultSubobject<USFW_EquipmentManagerComponent>(TEXT("EquipmentManager"));
-
+	Interaction = CreateDefaultSubobject<USFW_InteractionComponent>(TEXT("Interaction"));
 }
 
-// Called when the game starts or when spawned
 void ASFW_PlayerBase::BeginPlay()
 {
 	Super::BeginPlay();
 	UpdateMeshVisibility();
 
-	// Init speed from current state
+	// Init movement speed
 	ApplyMovementSpeed();
 
 	if (APlayerController* PC = Cast<APlayerController>(Controller))
@@ -83,27 +76,29 @@ void ASFW_PlayerBase::BeginPlay()
 		{
 			if (UEnhancedInputLocalPlayerSubsystem* Subsys = LP->GetSubsystem<UEnhancedInputLocalPlayerSubsystem>())
 			{
-				if (DefaultIMC) { Subsys->AddMappingContext(DefaultIMC, /*Priority*/0); }
+				if (DefaultIMC)
+				{
+					Subsys->AddMappingContext(DefaultIMC, /*Priority*/0);
+				}
 			}
 		}
 	}
 
-	// Ensure sprint speed state is applied on spawn
+	// Ensure sprint speed is respected at spawn
 	GetCharacterMovement()->MaxWalkSpeed = bWantsToSprint ? SprintSpeed : WalkSpeed;
 }
 
-// Called to bind functionality to input
 void ASFW_PlayerBase::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
 	if (UEnhancedInputComponent* EIC = Cast<UEnhancedInputComponent>(PlayerInputComponent))
 	{
-		// Axes (Triggered each frame)
+		// Movement axes
 		if (IA_Move) EIC->BindAction(IA_Move, ETriggerEvent::Triggered, this, &ASFW_PlayerBase::Move);
 		if (IA_Look) EIC->BindAction(IA_Look, ETriggerEvent::Triggered, this, &ASFW_PlayerBase::Look);
 
-		// Sprint (press/hold)
+		// Sprint
 		if (IA_Sprint)
 		{
 			EIC->BindAction(IA_Sprint, ETriggerEvent::Started, this, &ASFW_PlayerBase::SprintStarted);
@@ -111,7 +106,7 @@ void ASFW_PlayerBase::SetupPlayerInputComponent(UInputComponent* PlayerInputComp
 			EIC->BindAction(IA_Sprint, ETriggerEvent::Canceled, this, &ASFW_PlayerBase::SprintCompleted);
 		}
 
-		// Crouch (hold to crouch)
+		// Crouch (hold)
 		if (IA_Crouch)
 		{
 			EIC->BindAction(IA_Crouch, ETriggerEvent::Started, this, &ASFW_PlayerBase::CrouchStarted);
@@ -119,14 +114,38 @@ void ASFW_PlayerBase::SetupPlayerInputComponent(UInputComponent* PlayerInputComp
 			EIC->BindAction(IA_Crouch, ETriggerEvent::Canceled, this, &ASFW_PlayerBase::CrouchCompleted);
 		}
 
+		// Interact
 		if (IA_Interact)
 		{
 			EIC->BindAction(IA_Interact, ETriggerEvent::Started, this, &ASFW_PlayerBase::TryInteract);
 		}
 
+		// Headlamp toggle
 		if (IA_ToggleHeadLamp)
 		{
 			EIC->BindAction(IA_ToggleHeadLamp, ETriggerEvent::Started, this, &ASFW_PlayerBase::HandleToggleHeadLamp);
+		}
+
+		// Use active item (flashlight toggle, spirit box, etc)
+		if (IA_Use)
+		{
+			EIC->BindAction(IA_Use, ETriggerEvent::Started, this, &ASFW_PlayerBase::UseStarted);
+		}
+
+		// Voice: Local / proximity push-to-talk
+		if (IA_PTT_Local)
+		{
+			EIC->BindAction(IA_PTT_Local, ETriggerEvent::Started, this, &ASFW_PlayerBase::LocalPTT_Pressed);
+			EIC->BindAction(IA_PTT_Local, ETriggerEvent::Completed, this, &ASFW_PlayerBase::LocalPTT_Released);
+			EIC->BindAction(IA_PTT_Local, ETriggerEvent::Canceled, this, &ASFW_PlayerBase::LocalPTT_Released);
+		}
+
+		// Voice: Radio / walkie push-to-talk
+		if (IA_PTT_Radio)
+		{
+			EIC->BindAction(IA_PTT_Radio, ETriggerEvent::Started, this, &ASFW_PlayerBase::RadioPTT_Pressed);
+			EIC->BindAction(IA_PTT_Radio, ETriggerEvent::Completed, this, &ASFW_PlayerBase::RadioPTT_Released);
+			EIC->BindAction(IA_PTT_Radio, ETriggerEvent::Canceled, this, &ASFW_PlayerBase::RadioPTT_Released);
 		}
 	}
 }
@@ -177,8 +196,8 @@ void ASFW_PlayerBase::Move(const FInputActionValue& Value)
 	const FVector Fwd = FRotationMatrix(YawRot).GetUnitAxis(EAxis::X);
 	const FVector Rt = FRotationMatrix(YawRot).GetUnitAxis(EAxis::Y);
 
-	AddMovementInput(Fwd, Axis2D.Y); // typically Y = forward on 2D stick
-	AddMovementInput(Rt, Axis2D.X); // X = right
+	AddMovementInput(Fwd, Axis2D.Y); // Y = forward/back
+	AddMovementInput(Rt, Axis2D.X); // X = right/left
 }
 
 void ASFW_PlayerBase::Look(const FInputActionValue& Value)
@@ -193,7 +212,6 @@ void ASFW_PlayerBase::SprintStarted(const FInputActionValue& Value)
 	bWantsToSprint = true;
 	ApplyMovementSpeed();               // local prediction
 	if (!HasAuthority()) ServerSetSprint(true);
-
 }
 
 void ASFW_PlayerBase::SprintCompleted(const FInputActionValue& Value)
@@ -202,7 +220,6 @@ void ASFW_PlayerBase::SprintCompleted(const FInputActionValue& Value)
 	ApplyMovementSpeed();               // local prediction
 	if (!HasAuthority()) ServerSetSprint(false);
 }
-
 
 void ASFW_PlayerBase::UpdateMeshVisibility()
 {
@@ -215,71 +232,41 @@ void ASFW_PlayerBase::UpdateMeshVisibility()
 	}
 	if (USkeletalMeshComponent* Mesh3P = GetMesh())
 	{
-		Mesh3P->SetOwnerNoSee(bLocal); //hide full body for local only
+		// hide 3P mesh for self, show for others
+		Mesh3P->SetOwnerNoSee(bLocal);
 	}
 	if (FirstPersonCamera)
 	{
 		FirstPersonCamera->SetActive(bLocal);
 	}
-
 }
 
 void ASFW_PlayerBase::Server_Interact_Implementation(AActor* Target)
 {
 	if (!IsValid(Target)) return;
-	// (optional) validate range here
 
 	if (Target->GetClass()->ImplementsInterface(USFW_InteractableInterface::StaticClass()))
 	{
-		ISFW_InteractableInterface::Execute_Interact(Target, Controller); // runs on server
+		ISFW_InteractableInterface::Execute_Interact(Target, Controller); // server-side action
 	}
 }
 
 void ASFW_PlayerBase::TryInteract()
 {
-	if (!Controller) return;
-
-	FVector EyesLoc; FRotator EyesRot;
-	Controller->GetPlayerViewPoint(EyesLoc, EyesRot);
-
-	const FVector Start = EyesLoc;
-	const FVector End = Start + EyesRot.Vector() * InteractRange;
-
-	FHitResult Hit;
-	FCollisionQueryParams Params(SCENE_QUERY_STAT(InteractTrace), false, this);
-
-	if (GetWorld()->LineTraceSingleByChannel(Hit, Start, End, ECC_Visibility, Params))
+	if (Interaction)
 	{
-		AActor* HitActor = Hit.GetActor();                      //  declare it
-
-		if (IsValid(HitActor) &&
-			HitActor->GetClass()->ImplementsInterface(USFW_InteractableInterface::StaticClass()))
-		{
-			if (HasAuthority())
-			{
-				ISFW_InteractableInterface::Execute_Interact(HitActor, Controller);
-			}
-			else
-			{
-				Server_Interact(HitActor);                      // owning client -> server
-			}
-		}
-
-		// Safe debug
-		if (IsValid(HitActor))
-		{
-			UE_LOG(LogTemp, Warning, TEXT("Hit: %s"), *HitActor->GetName());
-		}
-		else
-		{
-			UE_LOG(LogTemp, Warning, TEXT("Hit: (no actor)"));
-		}
+		Interaction->TryInteract();
 	}
-
-	UE_LOG(LogTemp, Warning, TEXT("TryInteract pressed"));
-	DrawDebugLine(GetWorld(), Start, End, FColor::Cyan, false, 1.5f, 0, 1.f);
 }
 
+void ASFW_PlayerBase::UseStarted(const FInputActionValue& Value)
+{
+	UE_LOG(LogTemp, Log, TEXT("UseStarted"));
+	if (auto* Equip = FindComponentByClass<USFW_EquipmentManagerComponent>())
+	{
+		Equip->UseActiveLocal();
+	}
+}
 
 void ASFW_PlayerBase::HandleToggleHeadLamp(const FInputActionValue& Value)
 {
@@ -289,9 +276,86 @@ void ASFW_PlayerBase::HandleToggleHeadLamp(const FInputActionValue& Value)
 	}
 }
 
+// -------- Voice PTT handlers --------
+
+void ASFW_PlayerBase::LocalPTT_Pressed(const FInputActionValue& Value)
+{
+	bIsLocalPTTActive = true;
+	if (!HasAuthority())
+	{
+		Server_SetLocalPTT(true);
+	}
+
+	// future: start sending proximity voice stream
+}
+
+void ASFW_PlayerBase::LocalPTT_Released(const FInputActionValue& Value)
+{
+	bIsLocalPTTActive = false;
+	if (!HasAuthority())
+	{
+		Server_SetLocalPTT(false);
+	}
+
+	// future: stop sending proximity voice stream
+}
+
+void ASFW_PlayerBase::RadioPTT_Pressed(const FInputActionValue& Value)
+{
+	// Require that this player actually has radio-capable gear
+	bool bCanRadio = false;
+	if (EquipmentManager)
+	{
+		bCanRadio = EquipmentManager->CanUseRadioComms();
+	}
+
+	if (!bCanRadio)
+	{
+		// no walkie / no radio access -> ignore input
+		return;
+	}
+
+	bIsRadioPTTActive = true;
+	if (!HasAuthority())
+	{
+		Server_SetRadioPTT(true);
+	}
+
+	// future: start sending radio voice stream
+}
+
+void ASFW_PlayerBase::RadioPTT_Released(const FInputActionValue& Value)
+{
+	// Only bother clearing if we were actually talking
+	if (bIsRadioPTTActive)
+	{
+		bIsRadioPTTActive = false;
+		if (!HasAuthority())
+		{
+			Server_SetRadioPTT(false);
+		}
+
+		// future: stop sending radio voice stream
+	}
+}
+
+void ASFW_PlayerBase::Server_SetLocalPTT_Implementation(bool bActive)
+{
+	bIsLocalPTTActive = bActive;
+}
+
+void ASFW_PlayerBase::Server_SetRadioPTT_Implementation(bool bActive)
+{
+	bIsRadioPTTActive = bActive;
+}
 
 void ASFW_PlayerBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
 	DOREPLIFETIME(ASFW_PlayerBase, bWantsToSprint);
+
+	// voice talk state
+	DOREPLIFETIME(ASFW_PlayerBase, bIsLocalPTTActive);
+	DOREPLIFETIME(ASFW_PlayerBase, bIsRadioPTTActive);
 }

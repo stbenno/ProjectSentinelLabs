@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "Core/Interact/SFW_InteractionComponent.h"
 
 #include "SFW_PlayerBase.generated.h"
 
@@ -20,13 +21,10 @@ class PROJECTSENTINELLABS_API ASFW_PlayerBase : public ACharacter
 	GENERATED_BODY()
 
 public:
-	// Sets default values for this character's properties
 	ASFW_PlayerBase();
 
 protected:
-	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
-
 	virtual void PossessedBy(AController* NewController) override;
 	virtual void OnRep_Controller() override;
 
@@ -39,7 +37,7 @@ protected:
 	USkeletalMeshComponent* Mesh1P;
 
 	/* Sprint State (replicated, useful for remote anim BP if needed) */
-	UPROPERTY(ReplicatedUsing=OnRep_WantsToSprint, BlueprintReadOnly, Category = "Movement")
+	UPROPERTY(ReplicatedUsing = OnRep_WantsToSprint, BlueprintReadOnly, Category = "Movement")
 	bool bWantsToSprint = false;
 
 	/* Speeds */
@@ -79,24 +77,22 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Input")
 	UInputAction* IA_Crouch = nullptr;
 
-	// SFW_PlayerBase.h
+	// Toggle headlamp
 	UPROPERTY(EditDefaultsOnly, Category = "Input")
 	UInputAction* IA_ToggleHeadLamp = nullptr;
 
 	UFUNCTION()
 	void HandleToggleHeadLamp(const FInputActionValue& Value);
 
-	// Handlers using Enhanced Input values
-	void Move(const FInputActionValue& Value);
-	void Look(const FInputActionValue& Value);
-	void SprintStarted(const FInputActionValue& Value);
-	void SprintCompleted(const FInputActionValue& Value);
-	void CrouchStarted(const FInputActionValue& Value) { Crouch(false); ApplyMovementSpeed(); }
-	void CrouchCompleted(const FInputActionValue& Value) { UnCrouch(false); ApplyMovementSpeed(); }
-
-	// ---- Interact ----
+	// ---- Interact / Use ----
 	UPROPERTY(EditDefaultsOnly, Category = "Input")
 	UInputAction* IA_Interact = nullptr;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Input")
+	UInputAction* IA_Use = nullptr;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Interact")
+	TObjectPtr<USFW_InteractionComponent> Interaction = nullptr;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Interact")
 	float InteractRange = 250.f;
@@ -104,24 +100,60 @@ protected:
 	UFUNCTION()
 	void TryInteract();
 
+	UFUNCTION()
+	void UseStarted(const FInputActionValue& Value);
+
 	UFUNCTION(Server, Reliable)
 	void Server_Interact(AActor* Target);
 
-	
+	// ---- Voice Chat Input ----
+	// Local / proximity push-to-talk
+	UPROPERTY(EditDefaultsOnly, Category = "Input|Voice")
+	UInputAction* IA_PTT_Local = nullptr;
 
-	
-	
+	// Radio / walkie push-to-talk
+	UPROPERTY(EditDefaultsOnly, Category = "Input|Voice")
+	UInputAction* IA_PTT_Radio = nullptr;
+
+	// Replicate whether we're actively transmitting on local proximity voice
+	UPROPERTY(Replicated, BlueprintReadOnly, Category = "Voice")
+	bool bIsLocalPTTActive = false;
+
+	// Replicate whether we're actively transmitting on radio/walkie
+	UPROPERTY(Replicated, BlueprintReadOnly, Category = "Voice")
+	bool bIsRadioPTTActive = false;
+
+	// Handlers for local (proximity) PTT
+	void LocalPTT_Pressed(const FInputActionValue& Value);
+	void LocalPTT_Released(const FInputActionValue& Value);
+
+	// Handlers for radio (walkie) PTT
+	void RadioPTT_Pressed(const FInputActionValue& Value);
+	void RadioPTT_Released(const FInputActionValue& Value);
+
+	// Server RPCs so the server knows our talk state
+	UFUNCTION(Server, Reliable)
+	void Server_SetLocalPTT(bool bActive);
+
+	UFUNCTION(Server, Reliable)
+	void Server_SetRadioPTT(bool bActive);
+
+	// ---- Movement / Look helpers ----
+	void Move(const FInputActionValue& Value);
+	void Look(const FInputActionValue& Value);
+	void SprintStarted(const FInputActionValue& Value);
+	void SprintCompleted(const FInputActionValue& Value);
+	void CrouchStarted(const FInputActionValue& Value) { Crouch(false); ApplyMovementSpeed(); }
+	void CrouchCompleted(const FInputActionValue& Value) { UnCrouch(false); ApplyMovementSpeed(); }
+
+	// visibility (1P vs 3P meshes etc)
 	void UpdateMeshVisibility();
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
-public:	
-	
-
-	// Called to bind functionality to input
+public:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	TObjectPtr<class USFW_EquipmentManagerComponent> EquipmentManager;
-
 };
