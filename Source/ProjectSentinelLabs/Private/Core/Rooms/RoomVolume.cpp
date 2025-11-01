@@ -26,10 +26,30 @@ void ARoomVolume::BeginPlay()
 {
     Super::BeginPlay();
 
-    // sync safe flag from enum
+    // Sync safe flag from enum. Hallway is never safe.
     if (RoomType == ERoomType::Safe)
     {
         bIsSafeRoom = true;
+    }
+    else if (RoomType == ERoomType::Hallway)
+    {
+        bIsSafeRoom = false;
+    }
+
+    // Warn if someone configured a hallway as Base/Rift in GameState.
+    if (ASFW_GameState* GS = GetSFWGameState())
+    {
+        if (RoomType == ERoomType::Hallway)
+        {
+            if (GS->BaseRoom == this)
+            {
+                UE_LOG(LogTemp, Warning, TEXT("[RoomVolume] %s is Hallway but assigned as BaseRoom. This is not allowed by design."), *GetName());
+            }
+            if (GS->RiftRoom == this)
+            {
+                UE_LOG(LogTemp, Warning, TEXT("[RoomVolume] %s is Hallway but assigned as RiftRoom. This is not allowed by design."), *GetName());
+            }
+        }
     }
 
     OnActorBeginOverlap.AddDynamic(this, &ARoomVolume::HandleBeginOverlap);
@@ -107,6 +127,13 @@ void ARoomVolume::NotifyPresenceChanged(APlayerState* PS, bool bEnter) const
             bEnter ? TEXT("ENTER") : TEXT("EXIT"),
             *RoomId.ToString());
     }
+    if (RoomType == ERoomType::Hallway)
+    {
+        UE_LOG(LogTemp, Verbose, TEXT("[RoomPresence] %s %s HALLWAY (%s)"),
+            *GetNameSafe(PS),
+            bEnter ? TEXT("ENTER") : TEXT("EXIT"),
+            *RoomId.ToString());
+    }
 }
 
 void ARoomVolume::UpdateSafeFlag(APawn* Pawn, int32 Delta)
@@ -140,19 +167,10 @@ void ARoomVolume::UpdateRiftFlag(APawn* Pawn, bool bEnter)
 
     if (!bThisIsRift)
     {
-        // We only change the rift flag if this is actually the chosen RiftRoom.
-        // If a player exits some random room that is not RiftRoom we don't touch bInRiftRoom here.
-        if (!bEnter && PS->bInRiftRoom)
-        {
-            // special case:
-            // If they are leaving the current RiftRoom (handled in HandleEndOverlap),
-            // we will clear. That code path will still call UpdateRiftFlag with bEnter=false
-            // on the same room they are exiting, so bThisIsRift will be true in that case.
-        }
+        // Only changes when this volume IS the active RiftRoom
         return;
     }
 
-    // We are in the actual RiftRoom
     PS->SetInRiftRoom(bEnter);
 }
 
@@ -168,7 +186,7 @@ void ARoomVolume::HandleBeginOverlap(AActor* OverlappedActor, AActor* OtherActor
     }
 
     // Safe-room enter
-    if (bIsSafeRoom)
+    if (bIsSafeRoom && RoomType != ERoomType::Hallway)
     {
         UpdateSafeFlag(Pawn, +1);
     }
@@ -189,7 +207,7 @@ void ARoomVolume::HandleEndOverlap(AActor* OverlappedActor, AActor* OtherActor)
     }
 
     // Safe-room exit
-    if (bIsSafeRoom)
+    if (bIsSafeRoom && RoomType != ERoomType::Hallway)
     {
         UpdateSafeFlag(Pawn, -1);
     }
@@ -197,3 +215,17 @@ void ARoomVolume::HandleEndOverlap(AActor* OverlappedActor, AActor* OtherActor)
     // Rift exit check
     UpdateRiftFlag(Pawn, /*bEnter*/ false);
 }
+
+#if WITH_EDITOR
+void ARoomVolume::PostEditChangeProperty(FPropertyChangedEvent& E)
+{
+    Super::PostEditChangeProperty(E);
+
+    // Enforce invariants in editor: Hallway can’t be safe.
+    if (RoomType == ERoomType::Hallway && bIsSafeRoom)
+    {
+        bIsSafeRoom = false;
+        UE_LOG(LogTemp, Warning, TEXT("[RoomVolume] %s: Hallway cannot be marked Safe. Cleared bIsSafeRoom."), *GetName());
+    }
+}
+#endif

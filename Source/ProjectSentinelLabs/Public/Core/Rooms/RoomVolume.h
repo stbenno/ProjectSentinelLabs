@@ -18,7 +18,8 @@ enum class ERoomType : uint8
 {
     Base          UMETA(DisplayName = "Base"),
     RiftCandidate UMETA(DisplayName = "RiftCandidate"),
-    Safe          UMETA(DisplayName = "Safe")
+    Safe          UMETA(DisplayName = "Safe"),
+    Hallway       UMETA(DisplayName = "Hallway")  // never Base or Rift
 };
 
 /**
@@ -44,14 +45,24 @@ public:
     bool bIsSafeRoom = false;
 
     /** Designer classification. Also drives bIsSafeRoom if Safe. */
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Room")
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Room|Type")
     ERoomType RoomType = ERoomType::Base;
+
+    // ---- Kind helpers (Blueprint) ----
+    UFUNCTION(BlueprintPure, Category = "Room|Type") bool IsHallway()      const { return RoomType == ERoomType::Hallway; }
+    UFUNCTION(BlueprintPure, Category = "Room|Type") bool IsBaseKind()     const { return RoomType == ERoomType::Base; }
+    UFUNCTION(BlueprintPure, Category = "Room|Type") bool IsSafeKind()     const { return RoomType == ERoomType::Safe; }
+    UFUNCTION(BlueprintPure, Category = "Room|Type") bool IsRiftCandidate()const { return RoomType == ERoomType::RiftCandidate; }
 
 protected:
     virtual void BeginPlay() override;
 
     UFUNCTION() void HandleBeginOverlap(AActor* OverlappedActor, AActor* OtherActor);
     UFUNCTION() void HandleEndOverlap(AActor* OverlappedActor, AActor* OtherActor);
+
+#if WITH_EDITOR
+    virtual void PostEditChangeProperty(FPropertyChangedEvent& E) override;
+#endif
 
 private:
     /** Per-actor debounce to avoid doorway spam. */
