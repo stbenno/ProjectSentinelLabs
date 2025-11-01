@@ -53,6 +53,14 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Lamp|Flicker")
 	float FlickerIntervalMax = 0.20f;
 
+	// Lamp's logical room identifier
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Lamp|Room")
+	FName RoomId = NAME_None;
+
+	// Optional helper
+	UFUNCTION(BlueprintPure, Category = "Lamp|Room")
+	FName GetRoomId() const { return RoomId; }
+
 protected:
 	virtual void BeginPlay() override;
 

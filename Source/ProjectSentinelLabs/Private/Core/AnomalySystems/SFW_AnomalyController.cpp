@@ -15,6 +15,9 @@
 #include "EngineUtils.h"
 #include "TimerManager.h"
 
+#include "Core/Lights/SFW_PowerLibrary.h"
+#include "Core/AnomalySystems/SFW_DecisionTypes.h"
+
 DEFINE_LOG_CATEGORY_STATIC(LogAnomalyController, Log, All);
 
 const FName ASFW_AnomalyController::TAG_BaseRoom(TEXT("BaseRoomCandidate"));
@@ -105,52 +108,70 @@ ASFW_GameState* ASFW_AnomalyController::GS() const
 // ------------------------
 // Room picking
 // ------------------------
+static bool IsEligibleRoomVolume(ARoomVolume* V)
+{
+	if (!V) return false;
+	if (V->bIsSafeRoom) return false;
+	// Block Safe/Hallway from being chosen as Base/Rift
+	if (V->RoomType == ERoomType::Safe) return false;
+	if (V->RoomType == ERoomType::Hallway) return false;
+	return true;
+}
+
 void ASFW_AnomalyController::PickRooms()
 {
-	TArray<AActor*> BaseCands;
-	UGameplayStatics::GetAllActorsWithTag(this, TAG_BaseRoom, BaseCands);
+	// ---- Base candidates ----
+	TArray<AActor*> BaseRaw;
+	UGameplayStatics::GetAllActorsWithTag(this, TAG_BaseRoom, BaseRaw);
+
+	TArray<ARoomVolume*> BaseCands;
+	for (AActor* A : BaseRaw)
+		if (ARoomVolume* V = Cast<ARoomVolume>(A))
+			if (IsEligibleRoomVolume(V)) BaseCands.Add(V);
+
 	if (BaseCands.Num() == 0)
 	{
-		UE_LOG(LogAnomalyController, Warning, TEXT("No BaseRoomCandidate actors found."));
+		UE_LOG(LogAnomalyController, Warning, TEXT("No eligible BaseRoomCandidate actors found."));
 		return;
 	}
 
 	const int32 BaseIdx = FMath::RandRange(0, BaseCands.Num() - 1);
-	BaseRoom = BaseCands[BaseIdx];
+	ARoomVolume* BaseV = BaseCands[BaseIdx];
+	BaseRoom = BaseV;
 
-	TArray<AActor*> RiftCands;
-	UGameplayStatics::GetAllActorsWithTag(this, TAG_RiftRoom, RiftCands);
-	RiftCands.Remove(BaseRoom);
+	// ---- Rift candidates ----
+	TArray<AActor*> RiftRaw;
+	UGameplayStatics::GetAllActorsWithTag(this, TAG_RiftRoom, RiftRaw);
 
+	TArray<ARoomVolume*> RiftCands;
+	for (AActor* A : RiftRaw)
+		if (ARoomVolume* V = Cast<ARoomVolume>(A))
+			if (V != BaseV && IsEligibleRoomVolume(V)) RiftCands.Add(V);
+
+	// If nothing in Rift tag list, try Base list again as a fallback pool (still filtered)
 	if (RiftCands.Num() == 0)
 	{
-		if (BaseCands.Num() > 1)
-		{
-			const int32 AltIdx = (BaseIdx + 1) % BaseCands.Num();
-			BaseRoom = BaseCands[AltIdx];
-			UGameplayStatics::GetAllActorsWithTag(this, TAG_RiftRoom, RiftCands);
-			RiftCands.Remove(BaseRoom);
-		}
+		for (ARoomVolume* V : BaseCands)
+			if (V != BaseV && IsEligibleRoomVolume(V)) RiftCands.AddUnique(V);
 	}
+
 	if (RiftCands.Num() == 0)
 	{
-		UE_LOG(LogAnomalyController, Warning, TEXT("No RiftRoomCandidate available after excluding Base."));
+		UE_LOG(LogAnomalyController, Warning, TEXT("No eligible RiftRoomCandidate available after excluding Base/Safe/Hallway."));
 		return;
 	}
 
-	TArray<float> Weights;
-	Weights.Reserve(RiftCands.Num());
-	for (AActor* R : RiftCands)
+	// weight by path distance (closer = higher weight)
+	TArray<float> Weights; Weights.Reserve(RiftCands.Num());
+	for (ARoomVolume* R : RiftCands)
 	{
-		const float d = PathDistanceUU(BaseRoom, R);
+		const float d = PathDistanceUU(BaseV, R);
 		const float sigma = FMath::Max(1.f, RiftSigmaUU);
 		const float w = FMath::Exp(-d / sigma); // closer gets higher weight
 		Weights.Add(FMath::Max(0.0001f, w));
 	}
 
-	float Total = 0.f;
-	for (float w : Weights) Total += w;
-
+	float Total = 0.f; for (float w : Weights) Total += w;
 	float r = FMath::FRandRange(0.f, Total);
 	int32 Pick = 0;
 	for (int32 i = 0; i < Weights.Num(); ++i)
@@ -241,7 +262,7 @@ void ASFW_AnomalyController::EnsureBaselineShade()
 	FVector Center = RiftRoom->GetActorLocation();
 	float Radius = 600.f;
 
-	if (const UBoxComponent* Box = RiftRoom->FindComponentByClass<UBoxComponent>())
+	if (const UBoxComponent* Box = Cast<AActor>(RiftRoom)->FindComponentByClass<UBoxComponent>())
 	{
 		Center = Box->GetComponentLocation();
 		Radius = Box->GetScaledBoxExtent().GetMax() * 0.8f;
@@ -278,11 +299,9 @@ void ASFW_AnomalyController::TryPunishShade()
 // ------------------------
 // Evidence helpers
 // ------------------------
-int32 ASFW_AnomalyController::PickEvidenceTypeForClass(EAnomalyClass Class) const
+int32 ASFW_AnomalyController::PickEvidenceTypeForClass(EAnomalyClass /*Class*/) const
 {
 	// map anomaly class to its 3 allowed evidence types (internal numeric IDs)
-	// Binder: EMF(1), Thermo(2), UV(3)  [example]
-	// Watcher: etc.
 	// For now just always EMF = 1 so we compile and test
 	return 1;
 }
@@ -400,14 +419,11 @@ void ASFW_AnomalyController::ExecuteAction(const FAnomalyActionRow& Row, float N
 	switch (Row.ActionId)
 	{
 	case EAnomalyActionId::DoNothing:
-	{
 		UE_LOG(LogAnomalyController, Verbose, TEXT("Decision: DoNothing"));
 		MarkActionFired(Row.ActionId, Now);
 		break;
-	}
 
 	case EAnomalyActionId::SpawnBaselineShade:
-	{
 		if (Lowest <= SpawnGateSanity && ShadesAlive < 1 && bInRift)
 		{
 			EnsureBaselineShade();
@@ -415,14 +431,11 @@ void ASFW_AnomalyController::ExecuteAction(const FAnomalyActionRow& Row, float N
 			UE_LOG(LogAnomalyController, Log, TEXT("Decision: SpawnBaselineShade"));
 		}
 		break;
-	}
 
 	case EAnomalyActionId::OpenEvidenceWindow:
 	{
-		ASFW_GameState* G = GS();
-		if (!G) break;
+		ASFW_GameState* G = GS(); if (!G) break;
 
-		// 1. close active window if expired
 		if (G->bEvidenceWindowActive)
 		{
 			const float SinceStart = Now - G->EvidenceWindowStartTime;
@@ -431,12 +444,10 @@ void ASFW_AnomalyController::ExecuteAction(const FAnomalyActionRow& Row, float N
 				G->Server_EndEvidenceWindow();
 				UE_LOG(LogAnomalyController, Log, TEXT("EvidenceWindow END"));
 			}
-			break; // already active this tick, don't try to re-open
+			break;
 		}
 
-		// 2. attempt to open a new window
 		const bool InBand = (Lowest >= EvidenceSanityMin && Lowest <= EvidenceSanityMax);
-
 		const float SinceLast = Now - LastEvidenceFireTime;
 		const bool CooldownOK = (SinceLast >= EvidenceWindowCooldownSec);
 		const bool FailsafeOK = (SinceLast >= EvidenceWindowFailsafeSec);
@@ -444,22 +455,16 @@ void ASFW_AnomalyController::ExecuteAction(const FAnomalyActionRow& Row, float N
 		if (bInRift && ((InBand && CooldownOK) || FailsafeOK))
 		{
 			const int32 EvidenceType = PickEvidenceTypeForClass(G->ActiveClass);
-
 			G->Server_StartEvidenceWindow(EvidenceType, EvidenceWindowDurationSec);
-
 			LastEvidenceFireTime = Now;
 			MarkActionFired(Row.ActionId, Now);
-
-			UE_LOG(LogAnomalyController, Log,
-				TEXT("EvidenceWindow START Class=%d EvidenceType=%d"),
-				static_cast<int32>(G->ActiveClass),
-				EvidenceType);
+			UE_LOG(LogAnomalyController, Log, TEXT("EvidenceWindow START Class=%d EvidenceType=%d"),
+				static_cast<int32>(G->ActiveClass), EvidenceType);
 		}
 		break;
 	}
 
-	default:
-		break;
+	default: break;
 	}
 }
 
@@ -523,7 +528,7 @@ void ASFW_AnomalyController::CacheSafeRooms()
 		ARoomVolume* V = *It;
 		if (!V || V->RoomId.IsNone()) continue;
 
-		if (V->Tags.Contains(FName("SafeRoom")) || V->bIsSafeRoom)
+		if (V->Tags.Contains(FName("SafeRoom")) || V->bIsSafeRoom || V->RoomType == ERoomType::Safe)
 		{
 			SafeRoomIds.Add(V->RoomId);
 		}
@@ -544,26 +549,32 @@ void ASFW_AnomalyController::HandleDecision(const FSFWDecisionPayload& P)
 	{
 		for (TActorIterator<ASFW_DoorBase> It(GetWorld()); It; ++It)
 		{
-			ASFW_DoorBase* Door = *It;
-			if (!Door) continue;
-
-			// if you want room filtering here:
-			// if (Door->GetRoomID() != P.RoomId) continue;
-
-			Door->HandleDecision(P);
+			if (ASFW_DoorBase* Door = *It)
+			{
+				// Optional: filter by room if your doors expose RoomId
+				// if (Door->GetRoomID() != P.RoomId) continue;
+				Door->HandleDecision(P);
+			}
 		}
 		break;
 	}
 
 	case ESFWDecision::LampFlicker:
-	{
-		BP_HandleLampFlicker(P);
+		if (!P.RoomId.IsNone())
+		{
+			USFW_PowerLibrary::FlickerRoom(this, P.RoomId, P.Duration);
+			BP_HandleLampFlicker(P); // optional BP VFX hook
+		}
 		break;
-	}
+
+	case ESFWDecision::BlackoutRoom:
+		if (!P.RoomId.IsNone())
+		{
+			USFW_PowerLibrary::BlackoutRoom(this, P.RoomId, P.Duration);
+		}
+		break;
 
 	default:
 		break;
 	}
 }
-
-
