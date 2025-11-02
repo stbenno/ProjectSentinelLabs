@@ -4,18 +4,19 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "Core/Components/SFW_LampControllerComponent.h"
 #include "SFW_LampBase.generated.h"
+
+class UStaticMeshComponent;
+class USFW_LampControllerComponent;
 
 UCLASS()
 class PROJECTSENTINELLABS_API ASFW_LampBase : public AActor
 {
 	GENERATED_BODY()
-
 public:
 	ASFW_LampBase();
 
-	/** Logical room identifier to drive power/blackouts. */
+	/** Logical room this lamp belongs to. If None, auto-filled from overlapping RoomVolume. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Lamp")
 	FName RoomId = NAME_None;
 
@@ -25,10 +26,10 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Lamp")
 	USFW_LampControllerComponent* Lamp = nullptr;
 
-	/** Server-side helper to change state. */
-	UFUNCTION(BlueprintCallable, Category = "Lamp")
-	void SetLampState(ELampState NewState, float OptionalDurationSeconds = -1.f);
-
 protected:
 	virtual void OnConstruction(const FTransform& Transform) override;
+
+#if WITH_EDITOR
+	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
+#endif
 };

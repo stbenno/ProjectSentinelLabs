@@ -15,6 +15,7 @@
 #include "EngineUtils.h"
 #include "TimerManager.h"
 
+#include "Core/Components/SFW_LampControllerComponent.h"
 #include "Core/Lights/SFW_PowerLibrary.h"
 #include "Core/AnomalySystems/SFW_DecisionTypes.h"
 
@@ -98,6 +99,22 @@ void ASFW_AnomalyController::StartRound()
 
 	// future housekeeping (sanity global drift not handled here)
 	GetWorldTimerManager().SetTimer(TickHandle, this, &ASFW_AnomalyController::ServerTick, 1.0f, true);
+}
+
+void ASFW_AnomalyController::SfDumpLamps() const
+{
+	UWorld* W = GetWorld(); if (!W) return;
+	int32 N = 0;
+	for (TActorIterator<AActor> It(W); It; ++It)
+	{
+		if (USFW_LampControllerComponent* L = It->FindComponentByClass<USFW_LampControllerComponent>())
+		{
+			++N;
+			UE_LOG(LogSFWPower, Log, TEXT("Lamp %s Room=%s"),
+				*It->GetName(), *L->RoomId.ToString());
+		}
+	}
+	UE_LOG(LogSFWPower, Log, TEXT("Total lamps: %d"), N);
 }
 
 ASFW_GameState* ASFW_AnomalyController::GS() const

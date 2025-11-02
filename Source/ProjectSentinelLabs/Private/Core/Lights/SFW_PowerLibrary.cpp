@@ -6,50 +6,81 @@
 #include "Engine/World.h"
 #include "EngineUtils.h"
 
-static bool IsServer(const UWorld* W) {
-    return W && W->GetNetMode() != NM_Client;
+DEFINE_LOG_CATEGORY(LogSFWPower);
+
+namespace {
+	inline bool IsServer(const UWorld* W) { return W && W->GetNetMode() != NM_Client; }
+
+	template<typename PredT>
+	void ForEachLamp(UWorld* W, PredT Pred) {
+		for (TActorIterator<AActor> It(W); It; ++It) {
+			if (AActor* A = *It) {
+				if (USFW_LampControllerComponent* L = A->FindComponentByClass<USFW_LampControllerComponent>()) {
+					Pred(L);
+				}
+			}
+		}
+	}
 }
 
-template<typename PredT>
-static void ForEachLamp(UWorld* W, PredT Pred) {
-    for (TActorIterator<AActor> It(W); It; ++It) {
-        if (AActor* A = *It) {
-            if (USFW_LampControllerComponent* L = A->FindComponentByClass<USFW_LampControllerComponent>()) {
-                Pred(L);
-            }
-        }
-    }
+void USFW_PowerLibrary::BlackoutRoom(UObject* WorldContextObject, FName RoomId, float Seconds)
+{
+	UWorld* W = WorldContextObject ? WorldContextObject->GetWorld() : nullptr;
+	if (!W) { UE_LOG(LogSFWPower, Warning, TEXT("[BlackoutRoom] No World")); return; }
+	const bool bAuth = IsServer(W);
+	UE_LOG(LogSFWPower, Log, TEXT("[BlackoutRoom] Room=%s Sec=%.2f Auth=%d"), *RoomId.ToString(), Seconds, bAuth);
+	if (!bAuth || RoomId.IsNone()) return;
+
+	int32 Total = 0, Touched = 0;
+	ForEachLamp(W, [RoomId, Seconds, &Total, &Touched](USFW_LampControllerComponent* L) {
+		++Total;
+		if (L && L->RoomId == RoomId) {
+			++Touched;
+			UE_LOG(LogSFWPower, Verbose, TEXT("[BlackoutRoom] -> %s Room=%s"),
+				*L->GetOwner()->GetName(), *L->RoomId.ToString());
+			L->SetState(ELampState::Off, Seconds);
+		}
+		});
+	UE_LOG(LogSFWPower, Log, TEXT("[BlackoutRoom] TotalLamps=%d Matched=%d"), Total, Touched);
 }
 
-void USFW_PowerLibrary::BlackoutRoom(UObject* WorldContextObject, FName RoomId, float Seconds) {
-    if (UWorld* W = WorldContextObject ? WorldContextObject->GetWorld() : nullptr) {
-        if (!IsServer(W)) return; // server authority only
-        ForEachLamp(W, [RoomId, Seconds](USFW_LampControllerComponent* L) {
-            if (L && L->RoomId == RoomId) {
-                L->SetState(ELampState::Off, Seconds);
-            }
-            });
-    }
-}
+void USFW_PowerLibrary::BlackoutSite(UObject* WorldContextObject, float Seconds)
+{
+	UWorld* W = WorldContextObject ? WorldContextObject->GetWorld() : nullptr;
+	if (!W) { UE_LOG(LogSFWPower, Warning, TEXT("[BlackoutSite] No World")); return; }
+	const bool bAuth = IsServer(W);
+	UE_LOG(LogSFWPower, Log, TEXT("[BlackoutSite] Sec=%.2f Auth=%d"), Seconds, bAuth);
+	if (!bAuth) return;
 
-void USFW_PowerLibrary::BlackoutSite(UObject* WorldContextObject, float Seconds) {
-    if (UWorld* W = WorldContextObject ? WorldContextObject->GetWorld() : nullptr) {
-        if (!IsServer(W)) return; // server authority only
-        ForEachLamp(W, [Seconds](USFW_LampControllerComponent* L) {
-            if (L) {
-                L->SetState(ELampState::Off, Seconds);
-            }
-            });
-    }
+	int32 Total = 0;
+	ForEachLamp(W, [Seconds, &Total](USFW_LampControllerComponent* L) {
+		++Total;
+		if (L) {
+			UE_LOG(LogSFWPower, Verbose, TEXT("[BlackoutSite] -> %s Room=%s"),
+				*L->GetOwner()->GetName(), *L->RoomId.ToString());
+			L->SetState(ELampState::Off, Seconds);
+		}
+		});
+	UE_LOG(LogSFWPower, Log, TEXT("[BlackoutSite] TotalLamps=%d"), Total);
 }
 
 void USFW_PowerLibrary::FlickerRoom(UObject* WorldContextObject, FName RoomId, float Seconds)
 {
-    if (UWorld* W = WorldContextObject ? WorldContextObject->GetWorld() : nullptr) {
-        if (!IsServer(W) || RoomId.IsNone()) return;
-        ForEachLamp(W, [RoomId, Seconds](USFW_LampControllerComponent* L) {
-            if (L && L->RoomId == RoomId)              // or L->GetRoomId()
-                L->SetState(ELampState::Flicker, Seconds);
-            });
-    }
+	UWorld* W = WorldContextObject ? WorldContextObject->GetWorld() : nullptr;
+	if (!W) { UE_LOG(LogSFWPower, Warning, TEXT("[FlickerRoom] No World")); return; }
+	const bool bAuth = IsServer(W);
+	UE_LOG(LogSFWPower, Log, TEXT("[FlickerRoom] Room=%s Sec=%.2f Auth=%d"), *RoomId.ToString(), Seconds, bAuth);
+	if (!bAuth || RoomId.IsNone()) return;
+
+	int32 Total = 0, Touched = 0;
+	ForEachLamp(W, [RoomId, Seconds, &Total, &Touched](USFW_LampControllerComponent* L) {
+		++Total;
+		if (L && L->RoomId == RoomId) {
+			++Touched;
+			UE_LOG(LogSFWPower, Verbose, TEXT("[FlickerRoom] -> %s Room=%s"),
+				*L->GetOwner()->GetName(), *L->RoomId.ToString());
+			L->SetState(ELampState::Flicker, Seconds);
+		}
+		});
+	UE_LOG(LogSFWPower, Log, TEXT("[FlickerRoom] TotalLamps=%d Matched=%d"), Total, Touched);
 }

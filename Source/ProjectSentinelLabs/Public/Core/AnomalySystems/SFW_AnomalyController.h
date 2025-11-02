@@ -60,6 +60,8 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Anomaly")
 	void StartRound();
 
+	UFUNCTION(Exec) void SfDumpLamps() const;
+
 protected:
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type Reason) override;
