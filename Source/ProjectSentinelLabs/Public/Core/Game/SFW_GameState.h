@@ -40,6 +40,12 @@ public:
 	UPROPERTY(Replicated, BlueprintReadOnly, Category = "Round")
 	float RoundStartTime;
 
+	UPROPERTY(Replicated, BlueprintReadOnly) bool bRoundInProgress = false;
+	UPROPERTY(Replicated, BlueprintReadOnly) float RoundEndTime = -1.f;
+
+	UFUNCTION(BlueprintCallable) void BeginRound(float Now, int32 Seed);
+	UFUNCTION(BlueprintCallable) void EndRound(float Now);
+
 	// ------------------------
 	// Global pacing / anomaly info
 	// ------------------------

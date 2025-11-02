@@ -37,6 +37,18 @@ ASFW_GameState::ASFW_GameState()
 	RadioIntegrity = 1.0f;
 }
 
+void ASFW_GameState::BeginRound(float Now, int32 Seed) {
+	RoundStartTime = Now;
+	RoundSeed = Seed;
+	RoundEndTime = -1.f;
+	bRoundInProgress = true;
+}
+
+void ASFW_GameState::EndRound(float Now) {
+	RoundEndTime = Now;
+	bRoundInProgress = false;
+}
+
 void ASFW_GameState::OnRep_EvidenceWindow()
 {
 	// clients can update HUD/sfx here if desired
@@ -171,20 +183,17 @@ void ASFW_GameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 	DOREPLIFETIME(ASFW_GameState, bRoundActive);
 	DOREPLIFETIME(ASFW_GameState, RoundSeed);
 	DOREPLIFETIME(ASFW_GameState, RoundStartTime);
+	DOREPLIFETIME(ASFW_GameState, RoundEndTime);   
 
 	DOREPLIFETIME(ASFW_GameState, AnomalyAggression);
 	DOREPLIFETIME(ASFW_GameState, ActiveClass);
-
 	DOREPLIFETIME(ASFW_GameState, BaseRoom);
 	DOREPLIFETIME(ASFW_GameState, RiftRoom);
-
 	DOREPLIFETIME(ASFW_GameState, bEvidenceWindowActive);
 	DOREPLIFETIME(ASFW_GameState, EvidenceWindowStartTime);
 	DOREPLIFETIME(ASFW_GameState, EvidenceWindowDurationSec);
 	DOREPLIFETIME(ASFW_GameState, CurrentEvidenceType);
-
 	DOREPLIFETIME(ASFW_GameState, BinderDoorScareBudget);
-
 	DOREPLIFETIME(ASFW_GameState, bRadioJammed);
 	DOREPLIFETIME(ASFW_GameState, RadioIntegrity);
 }
