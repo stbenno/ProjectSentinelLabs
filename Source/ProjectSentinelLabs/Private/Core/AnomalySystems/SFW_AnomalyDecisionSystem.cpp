@@ -1,4 +1,4 @@
-﻿#include "Core/AnomalySystems/SFW_AnomalyDecisionSystem.h"
+﻿#include "core/AnomalySystems/SFW_AnomalyDecisionSystem.h"
 #include "Engine/DataTable.h"
 #include "TimerManager.h"
 #include "EngineUtils.h"
@@ -7,7 +7,7 @@
 #include "Core/Game/SFW_PlayerState.h" // ESanityTier, GetSanityTier()
 
 // Player-only room occupancy
-static void GetOccupiedRooms(UWorld* World, TArray<FName>& Out)
+static void GetOccupiedRooms(UWorld * World, TArray<FName>&Out)
 {
 	Out.Reset();
 	if (!World) return;

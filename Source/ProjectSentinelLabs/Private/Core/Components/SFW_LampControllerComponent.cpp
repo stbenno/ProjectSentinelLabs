@@ -302,3 +302,11 @@ void USFW_LampControllerComponent::RebuildMaterialInstances()
 	CreateMIDsIfNeeded();
 	ApplyState();
 }
+
+
+
+
+
+
+
+
