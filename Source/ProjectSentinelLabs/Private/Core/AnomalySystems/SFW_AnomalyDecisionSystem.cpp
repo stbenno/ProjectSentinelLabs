@@ -1,5 +1,4 @@
 ﻿#include "Core/AnomalySystems/SFW_AnomalyDecisionSystem.h"
-#include "Engine/DataTable.h"
 #include "TimerManager.h"
 #include "EngineUtils.h"
 #include "GameFramework/Pawn.h"
@@ -56,6 +55,12 @@ void ASFW_AnomalyDecisionSystem::BeginPlay()
 			UE_LOG(LogTemp, Warning, TEXT("AnomalyDecisionSystem: DecisionsDT is null."));
 		}
 
+		RefreshBiasFromProfile();
+
+		UE_LOG(LogTemp, Warning,
+			TEXT("AnomalyDecisionSystem: BeginPlay on server, IntervalSec=%.2f DoorBias=%.2f LightBias=%.2f"),
+			IntervalSec, CachedDoorBias, CachedLightBias);
+
 		GetWorldTimerManager().SetTimer(
 			TickHandle,
 			this,
@@ -63,8 +68,6 @@ void ASFW_AnomalyDecisionSystem::BeginPlay()
 			IntervalSec,
 			true
 		);
-
-		UE_LOG(LogTemp, Warning, TEXT("AnomalyDecisionSystem: BeginPlay on server, IntervalSec=%.2f"), IntervalSec);
 	}
 }
 
@@ -72,6 +75,40 @@ void ASFW_AnomalyDecisionSystem::EndPlay(const EEndPlayReason::Type EndPlayReaso
 {
 	GetWorldTimerManager().ClearTimer(TickHandle);
 	Super::EndPlay(EndPlayReason);
+}
+
+void ASFW_AnomalyDecisionSystem::RefreshBiasFromProfile()
+{
+	CachedDoorBias = 1.f;
+	CachedLightBias = 1.f;
+
+	if (!AnomalyProfilesDT)
+	{
+		UE_LOG(LogTemp, Warning,
+			TEXT("[DecisionSystem] No AnomalyProfilesDT set; using neutral biases."));
+		return;
+	}
+
+	for (const auto& Pair : AnomalyProfilesDT->GetRowMap())
+	{
+		if (FSFWAnomalyProfileRow* Row = reinterpret_cast<FSFWAnomalyProfileRow*>(Pair.Value))
+		{
+			if (Row->AnomalyType == ActiveAnomalyType)
+			{
+				CachedDoorBias = Row->DoorBias;
+				CachedLightBias = Row->LightBias;
+
+				UE_LOG(LogTemp, Warning,
+					TEXT("[DecisionSystem] Using profile '%s' DoorBias=%.2f LightBias=%.2f"),
+					*Row->DisplayName.ToString(), CachedDoorBias, CachedLightBias);
+				return;
+			}
+		}
+	}
+
+	UE_LOG(LogTemp, Warning,
+		TEXT("[DecisionSystem] No profile row for anomaly type %d; using neutral biases."),
+		static_cast<int32>(ActiveAnomalyType));
 }
 
 bool ASFW_AnomalyDecisionSystem::IsReady(const FSFWDecisionRow& R) const
@@ -107,17 +144,47 @@ const FSFWDecisionRow* ASFW_AnomalyDecisionSystem::PickWeighted(int32 Tier)
 
 	if (Options.Num() == 0) return nullptr;
 
+	auto GetBiasForDecision = [this](const FSFWDecisionRow* R) -> float
+		{
+			switch (R->Type)
+			{
+				// Light-related actions
+			case ESFWDecision::LampFlicker:
+			case ESFWDecision::BlackoutRoom:
+				return CachedLightBias;
+
+				// Door-related actions
+			case ESFWDecision::OpenDoor:
+			case ESFWDecision::CloseDoor:
+			case ESFWDecision::LockDoor:
+			case ESFWDecision::JamDoor:
+			case ESFWDecision::KnockDoor:
+				return CachedDoorBias;
+
+			default:
+				return 1.f; // neutral
+			}
+		};
+
+	// Compute total biased weight
 	float TotalW = 0.f;
 	for (const FSFWDecisionRow* R : Options)
 	{
-		TotalW += FMath::Max(0.f, R->Weight);
+		const float W = FMath::Max(0.f, R->Weight * GetBiasForDecision(R));
+		TotalW += W;
 	}
+
+	if (TotalW <= 0.f) return nullptr;
 
 	float Pick = FMath::FRandRange(0.f, TotalW);
 	for (const FSFWDecisionRow* R : Options)
 	{
-		Pick -= FMath::Max(0.f, R->Weight);
-		if (Pick <= 0.f) return R;
+		const float W = FMath::Max(0.f, R->Weight * GetBiasForDecision(R));
+		Pick -= W;
+		if (Pick <= 0.f)
+		{
+			return R;
+		}
 	}
 
 	return Options.Last();

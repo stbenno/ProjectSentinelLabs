@@ -42,6 +42,14 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Anomaly")
 	UDataTable* DecisionsDT = nullptr;
 
+	/** Profiles for Binder / Watcher / etc (FSFWAnomalyProfileRow). */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Anomaly")
+	UDataTable* AnomalyProfilesDT = nullptr;
+
+	/** Which anomaly is currently active. For now set this by hand (eg, Binder). */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Anomaly")
+	ESFWAnomalyType ActiveAnomalyType = ESFWAnomalyType::Binder;
+
 	/** How often to attempt a decision, in seconds (server only). */
 	UPROPERTY(EditAnywhere, Category = "Anomaly")
 	float IntervalSec = 2.0f;
@@ -50,6 +58,10 @@ protected:
 
 	/** Per-decision-type cooldown: ESFWDecision -> next allowed world time. */
 	TMap<ESFWDecision, double> NextAllowedTime;
+
+	// Cached behavior bias from the active profile
+	float CachedDoorBias = 1.f;
+	float CachedLightBias = 1.f;
 
 	// Core loop
 	UFUNCTION()
@@ -61,6 +73,7 @@ protected:
 	const FSFWDecisionRow* PickWeighted(int32 Tier);
 	void Dispatch(const FSFWDecisionRow& R, FName RoomId);
 	int32 GetRoomTier(FName RoomId) const;
+	void RefreshBiasFromProfile();
 
 	/** Multicast payload to all clients, then raise OnDecisionBP. */
 	UFUNCTION(NetMulticast, Reliable)
