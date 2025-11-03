@@ -15,9 +15,9 @@ class PROJECTSENTINELLABS_API ASFW_GameMode : public AGameMode
 {
 	GENERATED_BODY()
 
-	virtual void BeginPlay() override;
-
 public:
+	ASFW_GameMode();
+
 	UFUNCTION(BlueprintCallable)
 	void StartRound();
 
@@ -28,11 +28,17 @@ public:
 	void FailRound(bool bSuccess);
 
 protected:
+	virtual void BeginPlay() override;
+	virtual void PostLogin(APlayerController* NewPlayer) override;
+
+	/** Class to spawn for the anomaly controller (set this to the BP in defaults). */
+	UPROPERTY(EditDefaultsOnly, Category = "Anomaly")
+	TSubclassOf<ASFW_AnomalyController> AnomalyControllerClass;
+
+	/** Runtime instance of the anomaly controller. */
 	UPROPERTY()
 	ASFW_AnomalyController* AnomalyController = nullptr;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Agents")
 	TObjectPtr<USFW_AgentCatalog> AgentCatalog = nullptr;
-
-	virtual void PostLogin(APlayerController* NewPlayer) override;
 };

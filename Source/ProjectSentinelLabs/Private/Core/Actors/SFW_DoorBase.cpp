@@ -162,20 +162,37 @@ void ASFW_DoorBase::FinishMotion()
 
 void ASFW_DoorBase::OpenDoor()
 {
+	UE_LOG(LogTemp, Warning,
+		TEXT("[Door] %s OpenDoor State=%d Locked=%d Role=%d"),
+		*GetName(),
+		(int32)State,
+		IsLocked() ? 1 : 0,
+		(int32)GetLocalRole());
+
 	if (IsLocked()) return;
 	if (State == EDoorState::Open || State == EDoorState::Opening) return;
 	if (!HasAuthority()) return;
+
 	State = EDoorState::Opening;
 	ApplyState();
 }
 
 void ASFW_DoorBase::CloseDoor()
 {
+	UE_LOG(LogTemp, Warning,
+		TEXT("[Door] %s CloseDoor State=%d Locked=%d Role=%d"),
+		*GetName(),
+		(int32)State,
+		IsLocked() ? 1 : 0,
+		(int32)GetLocalRole());
+
 	if (State == EDoorState::Closed || State == EDoorState::Closing) return;
 	if (!HasAuthority()) return;
+
 	State = EDoorState::Closing;
 	ApplyState();
 }
+
 
 void ASFW_DoorBase::LockDoor(float Duration)
 {
@@ -289,12 +306,19 @@ void ASFW_DoorBase::Multicast_PlaySlamSFX_Implementation(const FVector& Loc)
 
 void ASFW_DoorBase::HandleDecision_Implementation(const FSFWDecisionPayload& P)
 {
+	UE_LOG(LogTemp, Warning,
+		TEXT("[Door] %s HandleDecision Type=%d PayRoom=%s DoorRoom=%s"),
+		*GetName(),
+		(int32)P.Type,
+		*P.RoomId.ToString(),
+		*RoomID.ToString());
+
 	if (!HasAuthority() || P.RoomId != RoomID) return;
 
 	switch (P.Type)
 	{
-	case ESFWDecision::OpenDoor:  OpenDoor(); break;
-	case ESFWDecision::CloseDoor: CloseDoor(); break;
+	case ESFWDecision::OpenDoor:  OpenDoor();           break;
+	case ESFWDecision::CloseDoor: CloseDoor();          break;
 	case ESFWDecision::LockDoor:  LockDoor(P.Duration); break;
 	default: break;
 	}

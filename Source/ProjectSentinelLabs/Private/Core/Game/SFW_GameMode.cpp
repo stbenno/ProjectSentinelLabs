@@ -1,7 +1,6 @@
 // Fill out your copyright notice in the Description page of Project Settings.
-
-
 // SFW_GameMode.cpp
+
 #include "Core/Game/SFW_GameMode.h"
 #include "Core/AnomalySystems/SFW_AnomalyController.h"
 #include "Core/Game/SFW_GameState.h"
@@ -10,9 +9,17 @@
 #include "PlayerCharacter/Data/SFW_AgentCatalog.h"
 #include "Engine/World.h"
 
+ASFW_GameMode::ASFW_GameMode()
+{
+	// Leave AnomalyControllerClass null so editor forces you to pick BP_SFW_AnomalyController.
+	// You can optionally set a default here:
+	// AnomalyControllerClass = ASFW_AnomalyController::StaticClass();
+}
+
 void ASFW_GameMode::BeginPlay()
 {
 	Super::BeginPlay();
+
 	if (HasAuthority())
 	{
 		StartRound();
@@ -23,31 +30,39 @@ void ASFW_GameMode::StartRound()
 {
 	if (!HasAuthority()) return;
 
-	// reset state
+	// Reset state
 	if (ASFW_GameState* GS = GetGameState<ASFW_GameState>())
 	{
 		GS->bRoundActive = true;
 		GS->AnomalyAggression = 0.f;
 	}
 
-	// clean old controller (hot-reload safety)
+	// Clean old controller (hot-reload safety)
 	if (IsValid(AnomalyController) && !AnomalyController->IsActorBeingDestroyed())
 	{
 		AnomalyController->Destroy();
 		AnomalyController = nullptr;
 	}
 
-	// spawn and start controller
+	// Require a class to spawn
+	if (!AnomalyControllerClass)
+	{
+		UE_LOG(LogTemp, Error, TEXT("StartRound: AnomalyControllerClass is null. Set it to BP_SFW_AnomalyController in GameMode defaults."));
+		return;
+	}
+
+	// Spawn and start controller
 	FActorSpawnParameters Params;
 	Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 
 	AnomalyController = GetWorld()->SpawnActor<ASFW_AnomalyController>(
-		ASFW_AnomalyController::StaticClass(), FTransform::Identity, Params);
+		AnomalyControllerClass, FTransform::Identity, Params);
 
 	if (AnomalyController)
 	{
-		AnomalyController->StartRound(); // <-- required
-		UE_LOG(LogTemp, Warning, TEXT("StartRound: AnomalyController Spawned + Started."));
+		AnomalyController->StartRound();
+		UE_LOG(LogTemp, Warning, TEXT("StartRound: AnomalyController Spawned + Started (%s)."),
+			*AnomalyController->GetName());
 	}
 	else
 	{
@@ -73,7 +88,7 @@ void ASFW_GameMode::EndRound(bool bSuccess)
 	UE_LOG(LogTemp, Warning, TEXT("Round ended. Success=%d"), bSuccess ? 1 : 0);
 }
 
-void ASFW_GameMode::FailRound(bool /*bSuccess*/)
+void ASFW_GameMode::FailRound(bool bSuccess)
 {
 	EndRound(false);
 }
@@ -99,4 +114,3 @@ void ASFW_GameMode::PostLogin(APlayerController* NewPlayer)
 		}
 	}
 }
-

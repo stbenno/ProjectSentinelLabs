@@ -1,4 +1,6 @@
-﻿#pragma once
+﻿// SFW_AnomalyController.h
+
+#pragma once
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
@@ -9,7 +11,10 @@ class ASFW_GameState;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogAnomalyController, Log, All);
 
-/** Drives site “anomaly” behaviors and room-targeted actions. */
+/**
+ * Picks Base / Rift rooms and marks round state.
+ * All decision scheduling is handled by ASFW_AnomalyDecisionSystem.
+ */
 UCLASS()
 class PROJECTSENTINELLABS_API ASFW_AnomalyController : public AActor
 {
@@ -25,23 +30,18 @@ public:
 protected:
 	virtual void BeginPlay() override;
 
-	// ---- Decision loop ----
+	// ---- Room selection ----
 	void PickRooms();
-	void BuildDefaultActionTable();
 
-	UFUNCTION() void DecisionTick();
-	UFUNCTION() void ServerTick();
-
-	// ---- State ----
+	/** Base room for the round (non-safe, non-hallway). */
 	UPROPERTY(VisibleAnywhere, Category = "Rooms")
 	ARoomVolume* BaseRoom = nullptr;
 
+	/** Rift / anomaly focus room for the round (non-safe, non-hallway). */
 	UPROPERTY(VisibleAnywhere, Category = "Rooms")
 	ARoomVolume* RiftRoom = nullptr;
 
 private:
-	FTimerHandle DecisionHandle;
-	FTimerHandle TickHandle;
-
 	ASFW_GameState* GS() const;
+	bool IsForbiddenRoom(ARoomVolume* R) const;
 };

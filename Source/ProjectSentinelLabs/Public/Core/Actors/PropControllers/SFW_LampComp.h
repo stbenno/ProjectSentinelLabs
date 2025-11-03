@@ -1,8 +1,8 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-
 #pragma once
+
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
 #include "Core/AnomalySystems/SFW_DecisionTypes.h"
@@ -21,9 +21,13 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Lamp")
 	FName OwningRoomId = NAME_None;
 
-	UFUNCTION(Server, Reliable) void ServerPlayerToggle();
+	UFUNCTION(Server, Reliable)
+	void ServerPlayerToggle();
+
 	void OnPowerChanged(bool bPowered);
-	UFUNCTION() void HandleDecisionBP(const FSFWDecisionPayload& P);
+
+	UFUNCTION()
+	void HandleDecisionBP(const FSFWDecisionPayload& P);
 
 	UPROPERTY(BlueprintReadOnly, ReplicatedUsing = OnRep_Mode)
 	ESFWLampMode Mode = ESFWLampMode::Off;
@@ -37,11 +41,21 @@ protected:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 private:
-	UPROPERTY(Replicated) bool  bHasPower = true;
-	UPROPERTY(Replicated) bool  bDesiredOn = false;
-	UPROPERTY(Replicated) float FlickerEndSec = 0.f;
+	UPROPERTY(Replicated)
+	bool bHasPower = true;
 
-	UFUNCTION() void OnRep_Mode();
-	void RecomputeMode();         // server
-	void ApplyMode(bool FromRep); // calls BP
+	UPROPERTY(Replicated)
+	bool bDesiredOn = false;
+
+	UPROPERTY(Replicated)
+	float FlickerEndSec = 0.f;
+
+	UFUNCTION()
+	void OnRep_Mode();
+
+	// server only
+	void RecomputeMode();
+
+	// client + server
+	void ApplyMode(bool FromRep);
 };

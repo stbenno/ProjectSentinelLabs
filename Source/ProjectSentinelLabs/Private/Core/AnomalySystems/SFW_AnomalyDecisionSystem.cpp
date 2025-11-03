@@ -1,13 +1,13 @@
-﻿#include "core/AnomalySystems/SFW_AnomalyDecisionSystem.h"
+﻿#include "Core/AnomalySystems/SFW_AnomalyDecisionSystem.h"
 #include "Engine/DataTable.h"
 #include "TimerManager.h"
 #include "EngineUtils.h"
 #include "GameFramework/Pawn.h"
 #include "Core/Rooms/RoomVolume.h"
-#include "Core/Game/SFW_PlayerState.h" // ESanityTier, GetSanityTier()
+#include "Core/Game/SFW_PlayerState.h"
 
-// Player-only room occupancy
-static void GetOccupiedRooms(UWorld * World, TArray<FName>&Out)
+// ---- Player-only room occupancy (ignores SafeRoom and similar) ----
+static void GetOccupiedRooms(UWorld* World, TArray<FName>& Out)
 {
 	Out.Reset();
 	if (!World) return;
@@ -18,7 +18,7 @@ static void GetOccupiedRooms(UWorld * World, TArray<FName>&Out)
 	{
 		ARoomVolume* Vol = *It;
 		if (!Vol || Vol->RoomId.IsNone()) continue;
-		if (Vol->bIsSafeRoom) continue;                // <-- only addition
+		if (Vol->bIsSafeRoom) continue; // do not target safe rooms
 
 		TArray<AActor*> Over;
 		Vol->GetOverlappingActors(Over, APawn::StaticClass());
@@ -38,14 +38,33 @@ static void GetOccupiedRooms(UWorld * World, TArray<FName>&Out)
 
 	Out = Unique.Array();
 }
+
+ASFW_AnomalyDecisionSystem::ASFW_AnomalyDecisionSystem()
+{
+	PrimaryActorTick.bCanEverTick = false;
+	bReplicates = true;
+}
+
 void ASFW_AnomalyDecisionSystem::BeginPlay()
 {
 	Super::BeginPlay();
-	bReplicates = true;
 
 	if (HasAuthority())
 	{
-		GetWorldTimerManager().SetTimer(TickHandle, this, &ASFW_AnomalyDecisionSystem::TickDecision, IntervalSec, true);
+		if (!DecisionsDT)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("AnomalyDecisionSystem: DecisionsDT is null."));
+		}
+
+		GetWorldTimerManager().SetTimer(
+			TickHandle,
+			this,
+			&ASFW_AnomalyDecisionSystem::TickDecision,
+			IntervalSec,
+			true
+		);
+
+		UE_LOG(LogTemp, Warning, TEXT("AnomalyDecisionSystem: BeginPlay on server, IntervalSec=%.2f"), IntervalSec);
 	}
 }
 
@@ -77,7 +96,7 @@ const FSFWDecisionRow* ASFW_AnomalyDecisionSystem::PickWeighted(int32 Tier)
 	TArray<FSFWDecisionRow*> Options;
 	for (const auto& Pair : DecisionsDT->GetRowMap())
 	{
-		if (auto* Row = reinterpret_cast<FSFWDecisionRow*>(Pair.Value))
+		if (FSFWDecisionRow* Row = reinterpret_cast<FSFWDecisionRow*>(Pair.Value))
 		{
 			if (Row->Tier == Tier && IsReady(*Row) && Row->Weight > 0.f)
 			{
@@ -90,7 +109,9 @@ const FSFWDecisionRow* ASFW_AnomalyDecisionSystem::PickWeighted(int32 Tier)
 
 	float TotalW = 0.f;
 	for (const FSFWDecisionRow* R : Options)
+	{
 		TotalW += FMath::Max(0.f, R->Weight);
+	}
 
 	float Pick = FMath::FRandRange(0.f, TotalW);
 	for (const FSFWDecisionRow* R : Options)
@@ -98,6 +119,7 @@ const FSFWDecisionRow* ASFW_AnomalyDecisionSystem::PickWeighted(int32 Tier)
 		Pick -= FMath::Max(0.f, R->Weight);
 		if (Pick <= 0.f) return R;
 	}
+
 	return Options.Last();
 }
 
@@ -105,12 +127,25 @@ void ASFW_AnomalyDecisionSystem::Dispatch(const FSFWDecisionRow& R, FName RoomId
 {
 	FSFWDecisionPayload P{ R.Type, RoomId, R.Magnitude, R.Duration, this };
 
-	/*if (const UEnum* E = StaticEnum<ESFWDecision>())
+	// Bridge decisions to existing systems on the server
+	if (HasAuthority())
 	{
-		UE_LOG(LogTemp, Log, TEXT("[Decision] type=%s tier=%d room=%s mag=%.2f dur=%.2f"),
-			*E->GetNameStringByValue((int64)R.Type), R.Tier, *RoomId.ToString(), R.Magnitude, R.Duration);
-	} */
+		switch (R.Type)
+		{
+		case ESFWDecision::LampFlicker:
+			USFW_PowerLibrary::FlickerRoom(this, RoomId, R.Duration);
+			break;
 
+		case ESFWDecision::BlackoutRoom:
+			USFW_PowerLibrary::BlackoutRoom(this, RoomId, R.Duration);
+			break;
+
+		default:
+			break; // doors, jumpscares, etc are handled by their own listeners
+		}
+	}
+
+	// Notify generic listeners (doors, future systems, BP)
 	OnDecision.Broadcast(P);
 	MulticastDecision(P);
 }
@@ -166,6 +201,9 @@ void ASFW_AnomalyDecisionSystem::TickDecision()
 
 	TArray<FName> CandidateRooms;
 	GetOccupiedRooms(GetWorld(), CandidateRooms);
+
+	UE_LOG(LogTemp, Warning, TEXT("[DecisionSystem] TickDecision: Candidates=%d"), CandidateRooms.Num());
+
 	if (CandidateRooms.Num() == 0) return;
 
 	const FName Room = CandidateRooms[FMath::RandRange(0, CandidateRooms.Num() - 1)];

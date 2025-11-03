@@ -38,8 +38,8 @@ void USFW_LampControllerComponent::SetState(ELampState NewState, float OptionalD
 {
 	if (!GetOwner() || !GetOwner()->HasAuthority()) return;
 
-	UE_LOG(LogLampCtrl, Log, TEXT("[%s] SetState %d dur=%.2f"),
-		*GetOwner()->GetName(), (int32)NewState, OptionalDurationSeconds);
+	//UE_LOG(LogLampCtrl, Log, TEXT("[%s] SetState %d dur=%.2f"),
+		//*GetOwner()->GetName(), (int32)NewState, OptionalDurationSeconds);
 
 	State = NewState;
 	OnRep_State();
@@ -60,7 +60,7 @@ void USFW_LampControllerComponent::StartBlackoutRestoreTimer(float DurationSecon
 			[this]()
 			{
 				if (!GetOwner() || !GetOwner()->HasAuthority()) return;
-				UE_LOG(LogLampCtrl, Log, TEXT("[%s] Restore -> On"), *GetOwner()->GetName());
+				//UE_LOG(LogLampCtrl, Log, TEXT("[%s] Restore -> On"), *GetOwner()->GetName());
 				State = ELampState::On;
 				OnRep_State();
 			},
@@ -191,8 +191,8 @@ void USFW_LampControllerComponent::TickFlickerOnce()
 
 			L->SetIntensity(BaseLightIntensity * Mult);
 			L->SetVisibility(!bIsOffNow);
-			UE_LOG(LogLampCtrl, Log, TEXT("[%s] Flicker light mult=%.2f (base %.2f)"),
-				*GetOwner()->GetName(), Mult, BaseLightIntensity);
+			//UE_LOG(LogLampCtrl, Log, TEXT("[%s] Flicker light mult=%.2f (base %.2f)"),
+				//*GetOwner()->GetName(), Mult, BaseLightIntensity);
 		}
 	}
 
@@ -264,8 +264,8 @@ void USFW_LampControllerComponent::ApplyLightForState(bool bForceOff)
 		L->SetIntensity(NewI);
 		L->SetVisibility(!bOff, true);
 
-		UE_LOG(LogLampCtrl, Log, TEXT("[%s] Light vis=%d intensity=%.2f (base %.2f x %.2f)"),
-			*GetOwner()->GetName(), !bOff, NewI, BaseLightIntensity, Mult);
+		//UE_LOG(LogLampCtrl, Log, TEXT("[%s] Light vis=%d intensity=%.2f (base %.2f x %.2f)"),
+			//*GetOwner()->GetName(), !bOff, NewI, BaseLightIntensity, Mult);
 	}
 }
 
