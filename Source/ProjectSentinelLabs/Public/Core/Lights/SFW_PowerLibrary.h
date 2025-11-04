@@ -28,6 +28,10 @@ public:
 	UFUNCTION(BlueprintCallable, meta = (WorldContext = "WorldContextObject"), Category = "SFW|Power")
 	static void FlickerRoom(UObject* WorldContextObject, FName RoomId, float Seconds = 3.f);
 
+	/** Trigger a temporary EMF spike on all EMF devices. Server only has effect. */
+	UFUNCTION(BlueprintCallable, meta = (WorldContext = "WorldContextObject"), Category = "SFW|Power")
+	static void TriggerEMFBurst(UObject* WorldContextObject, int32 Level = 5, float Seconds = 4.f);
+
 private:
 	static UWorld* GetWorldChecked(UObject* WorldContextObject);
 	static bool IsServer(UWorld* World);
@@ -35,4 +39,3 @@ private:
 	static void ForEachLamp(UWorld* World, TFunctionRef<void(USFW_LampControllerComponent*)> Fn);
 	static void ForEachLampInRoom(UWorld* World, FName RoomId, TFunctionRef<void(USFW_LampControllerComponent*)> Fn);
 };
-

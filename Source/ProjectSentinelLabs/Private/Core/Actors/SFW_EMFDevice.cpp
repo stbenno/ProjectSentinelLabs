@@ -1,6 +1,5 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
-
 #include "Core/Actors/SFW_EMFDevice.h"
 
 #include "Components/StaticMeshComponent.h"
@@ -14,7 +13,6 @@
 #include "TimerManager.h"
 #include "EngineUtils.h"
 #include "Core/Game/SFW_GameState.h"
-
 
 ASFW_EMFDevice::ASFW_EMFDevice()
 {
@@ -40,6 +38,9 @@ ASFW_EMFDevice::ASFW_EMFDevice()
 
 	bIsActive = false;
 	EMFLevel = 0;
+
+	BurstLevel = 0;
+	BurstEndTime = 0.f;
 }
 
 void ASFW_EMFDevice::BeginPlay()
@@ -224,7 +225,7 @@ void ASFW_EMFDevice::ApplyActiveState()
 		}
 	}
 
-	// 2. Server scan timer mirrors BinderCurrentEMFLevel into our replicated EMFLevel
+	// 2. Server scan timer mirrors sources + bursts into our replicated EMFLevel
 	if (HasAuthority())
 	{
 		if (bIsActive)
@@ -245,10 +246,41 @@ void ASFW_EMFDevice::ApplyActiveState()
 		{
 			GetWorldTimerManager().ClearTimer(ScanTimerHandle);
 
-			// shut device means reset level on server
+			// shut device means reset level and clear bursts on server
+			BurstLevel = 0;
+			BurstEndTime = 0.f;
 			Server_SetEMFLevel(0);
 		}
 	}
+}
+
+void ASFW_EMFDevice::TriggerAnomalyBurst(int32 Level, float Seconds)
+{
+	if (!HasAuthority())
+	{
+		return;
+	}
+
+	Level = FMath::Clamp(Level, 0, 5);
+	Seconds = FMath::Max(0.f, Seconds);
+
+	if (Level <= 0 || Seconds <= 0.f)
+	{
+		return;
+	}
+
+	UWorld* World = GetWorld();
+	if (!World)
+	{
+		return;
+	}
+
+	BurstLevel = Level;
+	BurstEndTime = World->GetTimeSeconds() + Seconds;
+
+	UE_LOG(LogTemp, Log,
+		TEXT("[EMF] TriggerAnomalyBurst Level=%d Sec=%.2f Dev=%s"),
+		Level, Seconds, *GetName());
 }
 
 void ASFW_EMFDevice::DoServerScanForEMF()
@@ -290,12 +322,32 @@ void ASFW_EMFDevice::DoServerScanForEMF()
 		}
 	}
 
-	int32 NewLevel = FMath::Clamp(FMath::RoundToInt(StrongestSignal * 5.f), 0, 5);
+	int32 NewLevel = FMath::Clamp(FMath::RoundToInt(StrongestSignal * 4.f), 0, 4);
 
-	// 2. Evidence spike override
+	UWorld* World = GetWorld();
+	const float Now = World ? World->GetTimeSeconds() : 0.f;
+
+	// 2. Anomaly burst override
+	float BurstTimeRemaining = 0.f;
+	if (BurstLevel > 0 && World)
+	{
+		if (Now < BurstEndTime)
+		{
+			BurstTimeRemaining = BurstEndTime - Now;
+			NewLevel = FMath::Max(NewLevel, BurstLevel);
+		}
+		else
+		{
+			// burst expired
+			BurstLevel = 0;
+			BurstEndTime = 0.f;
+		}
+	}
+
+	// 3. Evidence spike override
 	// If evidence window is active AND EMF is the chosen clue, force at least 5
-	ASFW_GameState* GSLocal = GetWorld()
-		? GetWorld()->GetGameState<ASFW_GameState>()
+	ASFW_GameState* GSLocal = World
+		? World->GetGameState<ASFW_GameState>()
 		: nullptr;
 
 	if (GSLocal &&
@@ -308,7 +360,7 @@ void ASFW_EMFDevice::DoServerScanForEMF()
 		}
 	}
 
-	// 3. Replicate if changed
+	// 4. Replicate if changed
 	if (NewLevel != EMFLevel)
 	{
 		Server_SetEMFLevel(NewLevel);
@@ -317,13 +369,14 @@ void ASFW_EMFDevice::DoServerScanForEMF()
 	UE_LOG(
 		LogTemp,
 		Log,
-		TEXT("[EMF] DoServerScanForEMF tick. bIsActive=%d EMFLevel=%d New=%d"),
+		TEXT("[EMF] DoServerScanForEMF tick. bIsActive=%d EMFLevel=%d New=%d BurstLevel=%d BurstTime=%.2f"),
 		bIsActive ? 1 : 0,
 		EMFLevel,
-		NewLevel
+		NewLevel,
+		BurstLevel,
+		BurstTimeRemaining
 	);
 }
-
 
 void ASFW_EMFDevice::CacheLEDMaterials()
 {
@@ -413,5 +466,3 @@ void ASFW_EMFDevice::UpdateLEDVisuals()
 		);
 	}
 }
-
-

@@ -3,6 +3,7 @@
 
 #include "Core/Lights/SFW_PowerLibrary.h"
 #include "Core/Components/SFW_LampControllerComponent.h"
+#include "Core/Actors/SFW_EMFDevice.h"
 #include "Engine/World.h"
 #include "EngineUtils.h"
 #include "GameFramework/Actor.h"
@@ -49,7 +50,7 @@ void USFW_PowerLibrary::ForEachLampInRoom(UWorld* World, FName RoomId, TFunction
 
 		if (USFW_LampControllerComponent* L = A->FindComponentByClass<USFW_LampControllerComponent>())
 		{
-			if (L->RoomId == RoomId)   // <- was GetRoomId()
+			if (L->RoomId == RoomId)
 			{
 				Fn(L);
 			}
@@ -73,7 +74,6 @@ void USFW_PowerLibrary::BlackoutSite(UObject* WorldContextObject, float Seconds)
 	UE_LOG(LogSFWPower, Log, TEXT("[BlackoutSite] TotalLamps=%d"), Total);
 }
 
-
 void USFW_PowerLibrary::BlackoutRoom(UObject* WorldContextObject, FName RoomId, float Seconds)
 {
 	UWorld* W = GetWorldChecked(WorldContextObject);
@@ -83,7 +83,7 @@ void USFW_PowerLibrary::BlackoutRoom(UObject* WorldContextObject, FName RoomId, 
 	ForEachLamp(W, [&](USFW_LampControllerComponent* L)
 		{
 			++Total;
-			if (L->RoomId == RoomId)     // <- was GetRoomId()
+			if (L->RoomId == RoomId)
 			{
 				++Matched;
 				if (bAuth) { L->SetState(ELampState::Off, Seconds); }
@@ -105,7 +105,7 @@ void USFW_PowerLibrary::FlickerRoom(UObject* WorldContextObject, FName RoomId, f
 	ForEachLamp(W, [&](USFW_LampControllerComponent* L)
 		{
 			++Total;
-			if (L->RoomId == RoomId)     // <- was GetRoomId()
+			if (L->RoomId == RoomId)
 			{
 				++Matched;
 				if (bAuth) { L->SetState(ELampState::Flicker, Seconds); }
@@ -116,4 +116,36 @@ void USFW_PowerLibrary::FlickerRoom(UObject* WorldContextObject, FName RoomId, f
 		TEXT("[FlickerRoom] Room=%s Sec=%.2f Auth=%d"),
 		*RoomId.ToString(), Seconds, bAuth);
 	UE_LOG(LogSFWPower, Log, TEXT("[FlickerRoom] TotalLamps=%d Matched=%d"), Total, Matched);
+}
+
+void USFW_PowerLibrary::TriggerEMFBurst(UObject* WorldContextObject, int32 Level, float Seconds)
+{
+	UWorld* W = GetWorldChecked(WorldContextObject);
+	if (!IsServer(W))
+	{
+		return; // server authority only
+	}
+
+	Level = FMath::Clamp(Level, 0, 5);
+	Seconds = FMath::Max(0.f, Seconds);
+
+	if (Level <= 0 || Seconds <= 0.f)
+	{
+		UE_LOG(LogSFWPower, Verbose, TEXT("[EMFBurst] Ignored. Level=%d Sec=%.2f"), Level, Seconds);
+		return;
+	}
+
+	int32 Count = 0;
+	for (TActorIterator<ASFW_EMFDevice> It(W); It; ++It)
+	{
+		ASFW_EMFDevice* Dev = *It;
+		if (!Dev) continue;
+
+		Dev->TriggerAnomalyBurst(Level, Seconds);
+		++Count;
+	}
+
+	UE_LOG(LogSFWPower, Log,
+		TEXT("[EMFBurst] Level=%d Sec=%.2f Devices=%d"),
+		Level, Seconds, Count);
 }

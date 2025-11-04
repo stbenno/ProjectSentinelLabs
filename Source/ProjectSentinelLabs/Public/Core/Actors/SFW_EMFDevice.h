@@ -1,5 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
+// Fill out your copyright notice in the Description page of Project Settings.
+
 #pragma once
 
 #include "CoreMinimal.h"
@@ -57,6 +59,10 @@ public:
 	// Server only. Called as scan updates
 	UFUNCTION(Server, Reliable)
 	void Server_SetEMFLevel(int32 NewLevel);
+
+	/** Server-only: anomaly trigger calls this to force a temporary burst. */
+	UFUNCTION(BlueprintCallable, Category = "EMF")
+	void TriggerAnomalyBurst(int32 Level, float Seconds);
 
 protected:
 	// ---- Components ----
@@ -116,9 +122,15 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "EMF|Scan")
 	float ScanRadius = 800.f;
 
-
-	// Server-side pulse. Pulls BinderCurrentEMFLevel from GameState and mirrors it
+	// Server-side pulse. Pulls sources and burst state and mirrors into EMFLevel
 	void DoServerScanForEMF();
+
+	// Temporary anomaly-controlled burst (server-only)
+	UPROPERTY()
+	int32 BurstLevel = 0;
+
+	UPROPERTY()
+	float BurstEndTime = 0.f;
 
 	// Which socket to attach to on the character mesh
 	virtual FName GetAttachSocketName() const override
