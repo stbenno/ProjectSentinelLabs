@@ -1,12 +1,12 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
-
 #include "Core/Lights/SFW_PowerLibrary.h"
 #include "Core/Components/SFW_LampControllerComponent.h"
 #include "Core/Actors/SFW_EMFDevice.h"
 #include "Engine/World.h"
 #include "EngineUtils.h"
 #include "GameFramework/Actor.h"
+#include "TimerManager.h"
 
 DEFINE_LOG_CATEGORY(LogSFWPower);
 
@@ -148,4 +148,53 @@ void USFW_PowerLibrary::TriggerEMFBurst(UObject* WorldContextObject, int32 Level
 	UE_LOG(LogSFWPower, Log,
 		TEXT("[EMFBurst] Level=%d Sec=%.2f Devices=%d"),
 		Level, Seconds, Count);
+}
+
+void USFW_PowerLibrary::MakeActorEMFSource(UObject* WorldContextObject, AActor* TargetActor, float Seconds)
+{
+	if (!TargetActor)
+	{
+		return;
+	}
+
+	UWorld* W = GetWorldChecked(WorldContextObject);
+	if (!IsServer(W))
+	{
+		// clients do nothing
+		return;
+	}
+
+	static const FName EMFTag(TEXT("EMF_Source"));
+
+	// Add tag if not already present
+	if (!TargetActor->ActorHasTag(EMFTag))
+	{
+		TargetActor->Tags.Add(EMFTag);
+	}
+
+	UE_LOG(LogSFWPower, Log, TEXT("[MakeActorEMFSource] Actor=%s Sec=%.2f"),
+		*TargetActor->GetName(), Seconds);
+
+	// Seconds <= 0 means "leave it on" until something else clears it
+	if (Seconds <= 0.f)
+	{
+		return;
+	}
+
+	TWeakObjectPtr<AActor> WeakTarget = TargetActor;
+
+	FTimerDelegate RemoveDelegate;
+	RemoveDelegate.BindLambda([WeakTarget]()
+		{
+			if (AActor* A = WeakTarget.Get())
+			{
+				static const FName EMFTagInner(TEXT("EMF_Source"));
+				A->Tags.Remove(EMFTagInner);
+
+				UE_LOG(LogSFWPower, Log, TEXT("[MakeActorEMFSource] Tag removed from %s"), *A->GetName());
+			}
+		});
+
+	FTimerHandle TmpHandle;
+	W->GetTimerManager().SetTimer(TmpHandle, RemoveDelegate, Seconds, false);
 }

@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "SFW_DecisionTypes.h"        // EAnomalyType
 #include "SFW_AnomalyController.generated.h"
 
 class ARoomVolume;
@@ -13,6 +14,7 @@ DECLARE_LOG_CATEGORY_EXTERN(LogAnomalyController, Log, All);
 
 /**
  * Picks Base / Rift rooms and marks round state.
+ * Also chooses which anomaly archetype (Binder / Splitter / etc) this round uses.
  * All decision scheduling is handled by ASFW_AnomalyDecisionSystem.
  */
 UCLASS()
@@ -26,6 +28,10 @@ public:
 	/** Entry point from game mode or level blueprint. Server only. */
 	UFUNCTION(BlueprintCallable, Category = "Anomaly")
 	void StartRound();
+
+	/** Which anomaly archetype is active this round. */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Anomaly")
+	ESFWAnomalyType ActiveAnomalyType = ESFWAnomalyType::Binder;
 
 protected:
 	virtual void BeginPlay() override;
@@ -44,4 +50,7 @@ protected:
 private:
 	ASFW_GameState* GS() const;
 	bool IsForbiddenRoom(ARoomVolume* R) const;
+
+	/** Decide which anomaly type this round uses (Binder, Splitter, etc). */
+	void PickAnomalyType();
 };

@@ -1,9 +1,14 @@
-﻿#include "Core/AnomalySystems/SFW_AnomalyDecisionSystem.h"
+﻿// SFW_AnomalyDecisionSystem.cpp
+
+#include "Core/AnomalySystems/SFW_AnomalyDecisionSystem.h"
+#include "Core/Components/SFW_AnomalyPropComponent.h"   // <-- ONLY here
+
 #include "TimerManager.h"
 #include "EngineUtils.h"
 #include "GameFramework/Pawn.h"
 #include "Core/Rooms/RoomVolume.h"
 #include "Core/Game/SFW_PlayerState.h"
+
 
 // ---- Player-only room occupancy (ignores SafeRoom and similar) ----
 static void GetOccupiedRooms(UWorld* World, TArray<FName>& Out)
@@ -111,6 +116,84 @@ void ASFW_AnomalyDecisionSystem::RefreshBiasFromProfile()
 		static_cast<int32>(ActiveAnomalyType));
 }
 
+void ASFW_AnomalyDecisionSystem::HandlePropPulse(const FSFWDecisionRow& R, FName RoomId)
+{
+	UWorld* World = GetWorld();
+	if (!World || RoomId.IsNone())
+	{
+		return;
+	}
+
+	// Find the room volume by RoomId
+	ARoomVolume* TargetRoom = nullptr;
+	for (TActorIterator<ARoomVolume> It(World); It; ++It)
+	{
+		ARoomVolume* Vol = *It;
+		if (Vol && Vol->RoomId == RoomId)
+		{
+			TargetRoom = Vol;
+			break;
+		}
+	}
+
+	if (!TargetRoom)
+	{
+		UE_LOG(LogTemp, Warning,
+			TEXT("[PropPulse] No ARoomVolume found for RoomId '%s'"),
+			*RoomId.ToString());
+		return;
+	}
+
+	// Find overlapping actors and look for our component by reflection, not the template helper
+	TArray<AActor*> Overlapping;
+	TargetRoom->GetOverlappingActors(Overlapping);
+
+	TArray<USFW_AnomalyPropComponent*> Candidates;
+
+	for (AActor* A : Overlapping)
+	{
+		if (!A) continue;
+
+		TArray<UActorComponent*> Components;
+		A->GetComponents(Components);
+
+		for (UActorComponent* C : Components)
+		{
+			if (C && C->IsA(USFW_AnomalyPropComponent::StaticClass()))
+			{
+				Candidates.Add(static_cast<USFW_AnomalyPropComponent*>(C));
+			}
+		}
+	}
+
+	if (Candidates.Num() == 0)
+	{
+		UE_LOG(LogTemp, Warning,
+			TEXT("[PropPulse] No props with AnomalyPropComponent in RoomId '%s'"),
+			*RoomId.ToString());
+		return;
+	}
+
+	USFW_AnomalyPropComponent* Chosen =
+		Candidates[FMath::RandRange(0, Candidates.Num() - 1)];
+
+	if (!Chosen || !Chosen->GetOwner())
+	{
+		UE_LOG(LogTemp, Warning,
+			TEXT("[PropPulse] Chosen component invalid in RoomId '%s'"),
+			*RoomId.ToString());
+		return;
+	}
+
+	UE_LOG(LogTemp, Warning,
+		TEXT("[PropPulse] Pulsing prop '%s' in RoomId '%s'"),
+		*Chosen->GetOwner()->GetName(),
+		*RoomId.ToString());
+
+	Chosen->TriggerAnomalyPulse(R.Duration);
+}
+
+
 bool ASFW_AnomalyDecisionSystem::IsReady(const FSFWDecisionRow& R) const
 {
 	const double Now = GetWorld()->GetTimeSeconds();
@@ -194,9 +277,9 @@ void ASFW_AnomalyDecisionSystem::Dispatch(const FSFWDecisionRow& R, FName RoomId
 {
 	FSFWDecisionPayload P{ R.Type, RoomId, R.Magnitude, R.Duration, this };
 
-	// Bridge decisions to existing systems on the server
 	if (HasAuthority())
 	{
+		// 1) Light / power routing (always runs, any anomaly)
 		switch (R.Type)
 		{
 		case ESFWDecision::LampFlicker:
@@ -208,11 +291,33 @@ void ASFW_AnomalyDecisionSystem::Dispatch(const FSFWDecisionRow& R, FName RoomId
 			break;
 
 		default:
-			break; // doors, jumpscares, etc are handled by their own listeners
+			break;
+		}
+
+		// 2) Binder-specific EMF + prop pulse hooks
+		if (ActiveAnomalyType == ESFWAnomalyType::Binder)
+		{
+			switch (R.Type)
+			{
+			case ESFWDecision::LampFlicker:
+			case ESFWDecision::BlackoutRoom:
+			case ESFWDecision::PropPulse:
+			{
+				// EMF spike for this decision window (cap at 4: non-evidence)
+				USFW_PowerLibrary::TriggerEMFBurst(this, 4, R.Duration);
+
+				// Optional prop pulse in the chosen room
+				HandlePropPulse(R, RoomId);
+				break;
+			}
+
+			default:
+				break;
+			}
 		}
 	}
 
-	// Notify generic listeners (doors, future systems, BP)
+	// Notify listeners (doors, BP, etc)
 	OnDecision.Broadcast(P);
 	MulticastDecision(P);
 }
@@ -269,7 +374,9 @@ void ASFW_AnomalyDecisionSystem::TickDecision()
 	TArray<FName> CandidateRooms;
 	GetOccupiedRooms(GetWorld(), CandidateRooms);
 
-	UE_LOG(LogTemp, Warning, TEXT("[DecisionSystem] TickDecision: Candidates=%d"), CandidateRooms.Num());
+	UE_LOG(LogTemp, Warning,
+		TEXT("[DecisionSystem] TickDecision: Candidates=%d"),
+		CandidateRooms.Num());
 
 	if (CandidateRooms.Num() == 0) return;
 
@@ -282,3 +389,4 @@ void ASFW_AnomalyDecisionSystem::TickDecision()
 		Dispatch(*R, Room);
 	}
 }
+

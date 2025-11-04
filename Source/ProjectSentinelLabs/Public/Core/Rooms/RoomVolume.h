@@ -12,6 +12,7 @@ class APawn;
 class APlayerState;
 class ASFW_GameState;
 class ASFW_PlayerState;
+class USFW_AnomalyPropComponent;
 
 UENUM(BlueprintType)
 enum class ERoomType : uint8
@@ -68,9 +69,13 @@ private:
     /** Per-actor debounce to avoid doorway spam. */
     UPROPERTY() TMap<TWeakObjectPtr<AActor>, float> LastEventTime;
 
-    /** Minimum seconds between events for the same actor. */
+        /** Minimum seconds between events for the same actor. */
     UPROPERTY(EditAnywhere, Category = "Room|Tuning")
     float DebounceSeconds = 0.15f;
+
+    // Props currently overlapping this room
+    UPROPERTY()
+    TSet<TObjectPtr<USFW_AnomalyPropComponent>> AnomalyPropsInRoom;
 
     /** Per-player safe-room overlap count (supports nested safe volumes). */
     TMap<TWeakObjectPtr<APlayerState>, int32> SafeOverlapCount;
@@ -90,4 +95,10 @@ private:
 
     /** Cached pointer to GameState for quick checks */
     ASFW_GameState* GetSFWGameState() const;
+
+public:
+    const TSet<TObjectPtr<USFW_AnomalyPropComponent>>& GetAnomalyPropsInRoom() const
+    {
+        return AnomalyPropsInRoom;
+    }
 };

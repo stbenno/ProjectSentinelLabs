@@ -65,10 +65,25 @@ struct FSFWAnomalyProfileRow : public FTableRowBase
 // Decision table rows (what the system can choose to do)
 // ------------------------------------------------------
 UENUM(BlueprintType)
-enum class ESFWDecision : uint8 {
-    Idle, LampFlicker, LockDoor, JamDoor, OpenDoor, CloseDoor, KnockDoor,
-    JumpScare, Teleport, Trap, Patrol, Hunt, EvidenceT1, EvidenceT2, Characteristic,
-    BlackoutRoom
+enum class ESFWDecision : uint8
+{
+    Idle,
+    LampFlicker,
+    LockDoor,
+    JamDoor,
+    OpenDoor,
+    CloseDoor,
+    KnockDoor,
+    JumpScare,
+    Teleport,
+    Trap,
+    Patrol,
+    Hunt,
+    EvidenceT1,
+    EvidenceT2,
+    Characteristic,
+    BlackoutRoom,
+    PropPulse
 };
 
 USTRUCT(BlueprintType)

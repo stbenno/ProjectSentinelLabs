@@ -43,68 +43,101 @@ bool ASFW_AnomalyController::IsForbiddenRoom(ARoomVolume* R) const
 	return false;
 }
 
-void ASFW_AnomalyController::PickRooms()
+void ASFW_AnomalyController::PickAnomalyType()
 {
-    BaseRoom = nullptr;
-    RiftRoom = nullptr;
+	// Simple example: random between Binder and Splitter.
+	// You can replace this with weighted logic or external config.
+	const int32 Roll = FMath::RandRange(0, 1);
+	ActiveAnomalyType = (Roll == 0)
+		? ESFWAnomalyType::Binder
+		: ESFWAnomalyType::Splitter;
 
-    UWorld* W = GetWorld();
-    if (!W) return;
-
-    // Collect candidate rooms: not safe, not hallway
-    TArray<ARoomVolume*> Candidates;
-    for (TActorIterator<ARoomVolume> It(W); It; ++It)
-    {
-        ARoomVolume* R = *It;
-        if (!R) continue;
-
-        // Adjust these filters to match your ARoomVolume
-        if (R->bIsSafeRoom)         continue;                  // never use safe rooms
-        if (R->RoomId == "Hallway") continue;                  // never use hallway
-
-        Candidates.Add(R);
-    }
-
-    if (Candidates.Num() == 0)
-    {
-        UE_LOG(LogAnomalyController, Warning,
-            TEXT("PickRooms: No valid room candidates (non-safe, non-hallway)."));
-        return;
-    }
-
-    // Pick Base randomly
-    const int32 BaseIdx = FMath::RandRange(0, Candidates.Num() - 1);
-    BaseRoom = Candidates[BaseIdx];
-
-    if (Candidates.Num() < 2)
-    {
-        // Only one candidate; cannot pick a distinct Rift
-        RiftRoom = nullptr;
-        UE_LOG(LogAnomalyController, Warning,
-            TEXT("PickRooms: Only one valid room candidate. Base=%s Rift=NULL"),
-            *GetNameSafe(BaseRoom));
-        return;
-    }
-
-    // Pick Rift randomly, distinct from Base
-    int32 RiftIdx = FMath::RandRange(0, Candidates.Num() - 2);
-    if (RiftIdx >= BaseIdx)
-    {
-        RiftIdx++; // skip over BaseIdx
-    }
-    RiftRoom = Candidates[RiftIdx];
-
-    UE_LOG(LogAnomalyController, Log, TEXT("PickRooms: Base=%s Rift=%s"),
-        *GetNameSafe(BaseRoom), *GetNameSafe(RiftRoom));
+	UE_LOG(
+		LogAnomalyController,
+		Log,
+		TEXT("PickAnomalyType: %d"),
+		static_cast<int32>(ActiveAnomalyType)
+	);
 }
 
+void ASFW_AnomalyController::PickRooms()
+{
+	BaseRoom = nullptr;
+	RiftRoom = nullptr;
+
+	UWorld* W = GetWorld();
+	if (!W) return;
+
+	// Collect candidate rooms: not safe, not hallway
+	TArray<ARoomVolume*> Candidates;
+	for (TActorIterator<ARoomVolume> It(W); It; ++It)
+	{
+		ARoomVolume* R = *It;
+		if (!R) continue;
+
+		if (IsForbiddenRoom(R))
+		{
+			continue;
+		}
+
+		Candidates.Add(R);
+	}
+
+	if (Candidates.Num() == 0)
+	{
+		UE_LOG(
+			LogAnomalyController,
+			Warning,
+			TEXT("PickRooms: No valid room candidates (non-safe, non-hallway).")
+		);
+		return;
+	}
+
+	// Pick Base randomly
+	const int32 BaseIdx = FMath::RandRange(0, Candidates.Num() - 1);
+	BaseRoom = Candidates[BaseIdx];
+
+	if (Candidates.Num() < 2)
+	{
+		// Only one candidate; cannot pick a distinct Rift
+		RiftRoom = nullptr;
+		UE_LOG(
+			LogAnomalyController,
+			Warning,
+			TEXT("PickRooms: Only one valid room candidate. Base=%s Rift=NULL"),
+			*GetNameSafe(BaseRoom)
+		);
+		return;
+	}
+
+	// Pick Rift randomly, distinct from Base
+	int32 RiftIdx = FMath::RandRange(0, Candidates.Num() - 2);
+	if (RiftIdx >= BaseIdx)
+	{
+		RiftIdx++; // skip over BaseIdx
+	}
+	RiftRoom = Candidates[RiftIdx];
+
+	UE_LOG(
+		LogAnomalyController,
+		Log,
+		TEXT("PickRooms: Base=%s Rift=%s"),
+		*GetNameSafe(BaseRoom),
+		*GetNameSafe(RiftRoom)
+	);
+}
 
 void ASFW_AnomalyController::StartRound()
 {
 	if (!HasAuthority()) return;
 
+	// 1) Decide which anomaly archetype this round uses
+	PickAnomalyType();
+
+	// 2) Pick rooms
 	PickRooms();
 
+	// 3) Mark round state on GameState
 	if (ASFW_GameState* G = GS())
 	{
 		const float Now = GetWorld()->GetTimeSeconds();
@@ -114,7 +147,15 @@ void ASFW_AnomalyController::StartRound()
 		G->RoundSeed = FMath::Rand();
 		G->BaseRoom = BaseRoom;
 		G->RiftRoom = RiftRoom;
+
+		// If you later add this to GameState, you can also mirror:
+		// G->ActiveAnomalyType = ActiveAnomalyType;
 	}
 
-	UE_LOG(LogAnomalyController, Warning, TEXT("StartRound: AnomalyController Spawned."));
+	UE_LOG(
+		LogAnomalyController,
+		Warning,
+		TEXT("StartRound: AnomalyController Spawned. Type=%d"),
+		static_cast<int32>(ActiveAnomalyType)
+	);
 }

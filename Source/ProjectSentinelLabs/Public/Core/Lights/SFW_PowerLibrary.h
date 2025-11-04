@@ -6,6 +6,7 @@
 #include "SFW_PowerLibrary.generated.h"
 
 class USFW_LampControllerComponent;
+class AActor;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSFWPower, Log, All);
 
@@ -31,6 +32,10 @@ public:
 	/** Trigger a temporary EMF spike on all EMF devices. Server only has effect. */
 	UFUNCTION(BlueprintCallable, meta = (WorldContext = "WorldContextObject"), Category = "SFW|Power")
 	static void TriggerEMFBurst(UObject* WorldContextObject, int32 Level = 5, float Seconds = 4.f);
+
+	/** Mark an actor as an EMF source for a limited time. Server only has effect. */
+	UFUNCTION(BlueprintCallable, meta = (WorldContext = "WorldContextObject"), Category = "SFW|Power")
+	static void MakeActorEMFSource(UObject* WorldContextObject, AActor* TargetActor, float Seconds = 10.f);
 
 private:
 	static UWorld* GetWorldChecked(UObject* WorldContextObject);

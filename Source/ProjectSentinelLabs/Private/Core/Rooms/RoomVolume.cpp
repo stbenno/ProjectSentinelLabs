@@ -11,6 +11,7 @@
 #include "GameFramework/Controller.h"
 #include "Engine/World.h"
 #include "Components/ShapeComponent.h"
+#include "Core/Components/SFW_AnomalyPropComponent.h"
 
 ARoomVolume::ARoomVolume()
 {
@@ -20,6 +21,7 @@ ARoomVolume::ARoomVolume()
     GetCollisionComponent()->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
     GetCollisionComponent()->SetCollisionResponseToAllChannels(ECR_Ignore);
     GetCollisionComponent()->SetCollisionResponseToChannel(ECC_Pawn, ECR_Overlap);
+    GetCollisionComponent()->SetCollisionResponseToChannel(ECC_WorldDynamic, ECR_Overlap); // for props
 }
 
 void ARoomVolume::BeginPlay()
@@ -176,45 +178,80 @@ void ARoomVolume::UpdateRiftFlag(APawn* Pawn, bool bEnter)
 
 void ARoomVolume::HandleBeginOverlap(AActor* OverlappedActor, AActor* OtherActor)
 {
-    if (!HasAuthority() || !IsPlayerPawn(OtherActor) || !ShouldProcess(OtherActor)) return;
-
-    APawn* Pawn = Cast<APawn>(OtherActor);
-    APlayerState* GenericPS = GetPlayerStateFromActor(OtherActor);
-    if (GenericPS)
+    if (!HasAuthority() || !OtherActor || !ShouldProcess(OtherActor))
     {
-        NotifyPresenceChanged(GenericPS, /*bEnter*/ true);
+        return;
     }
 
-    // Safe-room enter
-    if (bIsSafeRoom && RoomType != ERoomType::Hallway)
+    // 1) Player handling (unchanged)
+    if (IsPlayerPawn(OtherActor))
     {
-        UpdateSafeFlag(Pawn, +1);
+        APawn* Pawn = Cast<APawn>(OtherActor);
+        APlayerState* GenericPS = GetPlayerStateFromActor(OtherActor);
+        if (GenericPS)
+        {
+            NotifyPresenceChanged(GenericPS, /*bEnter*/ true);
+        }
+
+        if (bIsSafeRoom && RoomType != ERoomType::Hallway)
+        {
+            UpdateSafeFlag(Pawn, +1);
+        }
+
+        UpdateRiftFlag(Pawn, /*bEnter*/ true);
     }
 
-    // Rift enter check
-    UpdateRiftFlag(Pawn, /*bEnter*/ true);
+    // 2) Prop handling
+    if (USFW_AnomalyPropComponent* PropComp =
+        OtherActor->FindComponentByClass<USFW_AnomalyPropComponent>())
+    {
+        AnomalyPropsInRoom.Add(PropComp);
+
+        UE_LOG(LogTemp, Log,
+            TEXT("[RoomVolume] %s: prop ENTER %s"),
+            *RoomId.ToString(),
+            *GetNameSafe(OtherActor));
+    }
 }
 
 void ARoomVolume::HandleEndOverlap(AActor* OverlappedActor, AActor* OtherActor)
 {
-    if (!HasAuthority() || !IsPlayerPawn(OtherActor) || !ShouldProcess(OtherActor)) return;
-
-    APawn* Pawn = Cast<APawn>(OtherActor);
-    APlayerState* GenericPS = GetPlayerStateFromActor(OtherActor);
-    if (GenericPS)
+    if (!HasAuthority() || !OtherActor || !ShouldProcess(OtherActor))
     {
-        NotifyPresenceChanged(GenericPS, /*bEnter*/ false);
+        return;
     }
 
-    // Safe-room exit
-    if (bIsSafeRoom && RoomType != ERoomType::Hallway)
+    // 1) Player handling (unchanged)
+    if (IsPlayerPawn(OtherActor))
     {
-        UpdateSafeFlag(Pawn, -1);
+        APawn* Pawn = Cast<APawn>(OtherActor);
+        APlayerState* GenericPS = GetPlayerStateFromActor(OtherActor);
+        if (GenericPS)
+        {
+            NotifyPresenceChanged(GenericPS, /*bEnter*/ false);
+        }
+
+        if (bIsSafeRoom && RoomType != ERoomType::Hallway)
+        {
+            UpdateSafeFlag(Pawn, -1);
+        }
+
+        UpdateRiftFlag(Pawn, /*bEnter*/ false);
     }
 
-    // Rift exit check
-    UpdateRiftFlag(Pawn, /*bEnter*/ false);
+    // 2) Prop handling
+    if (USFW_AnomalyPropComponent* PropComp =
+        OtherActor->FindComponentByClass<USFW_AnomalyPropComponent>())
+    {
+        AnomalyPropsInRoom.Remove(PropComp);
+
+        UE_LOG(LogTemp, Log,
+            TEXT("[RoomVolume] %s: prop EXIT %s"),
+            *RoomId.ToString(),
+            *GetNameSafe(OtherActor));
+    }
 }
+
 
 #if WITH_EDITOR
 void ARoomVolume::PostEditChangeProperty(FPropertyChangedEvent& E)

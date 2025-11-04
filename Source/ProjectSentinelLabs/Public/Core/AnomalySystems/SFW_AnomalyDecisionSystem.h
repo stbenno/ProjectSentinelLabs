@@ -1,14 +1,17 @@
 #pragma once
 
+#pragma once
+
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "Engine/DataTable.h"
 #include "Core/AnomalySystems/SFW_DecisionTypes.h"
 #include "Core/Lights/SFW_PowerLibrary.h"
-#include "SFW_AnomalyDecisionSystem.generated.h"
+#include "SFW_AnomalyDecisionSystem.generated.h"   // <-- NOTE: no AnomalyProp include here
 
 class ARoomVolume;
 class ASFW_PlayerState;
+
 
 DECLARE_MULTICAST_DELEGATE_OneParam(FSFWOnDecision, const FSFWDecisionPayload&);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FSFWOnDecisionBP, const FSFWDecisionPayload&, Payload);
@@ -74,6 +77,7 @@ protected:
 	void Dispatch(const FSFWDecisionRow& R, FName RoomId);
 	int32 GetRoomTier(FName RoomId) const;
 	void RefreshBiasFromProfile();
+	void HandlePropPulse(const FSFWDecisionRow& R, FName RoomId);
 
 	/** Multicast payload to all clients, then raise OnDecisionBP. */
 	UFUNCTION(NetMulticast, Reliable)
