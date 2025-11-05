@@ -1,5 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
+// SFW_EquipmentManagerComponent.h
+
 #pragma once
 
 #include "CoreMinimal.h"
@@ -10,7 +12,6 @@
 class ASFW_EquippableBase;
 class ACharacter;
 class ASFW_EMFDevice;
-
 
 /**
  * Owns the player's carried items, hand item, and headlamp.
@@ -78,7 +79,6 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Equipment")
 	ASFW_EMFDevice* FindEMF() const;
-
 
 	// ---- Core actions (server auth) ----
 	UFUNCTION(Server, Reliable)

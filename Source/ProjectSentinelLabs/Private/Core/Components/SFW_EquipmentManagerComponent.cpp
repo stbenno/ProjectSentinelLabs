@@ -1,13 +1,15 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
+// SFW_EquipmentManagerComponent.cpp
 
 #include "Core/Components/SFW_EquipmentManagerComponent.h"
+
 #include "Core/Actors/SFW_EquippableBase.h"
 #include "Core/Actors/SFW_HeadLamp.h"
-#include "Net/UnrealNetwork.h"
-#include "GameFramework/Character.h"
 #include "Core/Actors/SFW_EMFDevice.h"
 
+#include "GameFramework/Character.h"
+#include "Net/UnrealNetwork.h"
 
 USFW_EquipmentManagerComponent::USFW_EquipmentManagerComponent()
 {
@@ -67,8 +69,6 @@ ASFW_EquippableBase* USFW_EquipmentManagerComponent::GetItemInSlot(int32 Index) 
 
 bool USFW_EquipmentManagerComponent::CanUseRadioComms() const
 {
-	// Rule: if you have *any* item that returns GrantsRadioComms() == true,
-	// you are allowed to transmit on radio.
 	for (ASFW_EquippableBase* Item : Inventory)
 	{
 		if (Item && Item->GrantsRadioComms())
@@ -116,7 +116,7 @@ void USFW_EquipmentManagerComponent::ApplyActiveVisuals()
 		*GetOwner()->GetName(),
 		ActiveHandItem ? *ActiveHandItem->GetName() : TEXT("NULL"));
 
-	// Hide everything first
+	// Hide / detach everything first
 	for (ASFW_EquippableBase* Item : Inventory)
 	{
 		if (Item)
@@ -136,8 +136,6 @@ void USFW_EquipmentManagerComponent::ApplyActiveVisuals()
 	}
 }
 
-
-
 ASFW_EMFDevice* USFW_EquipmentManagerComponent::FindEMF() const
 {
 	for (ASFW_EquippableBase* Item : Inventory)
@@ -151,7 +149,6 @@ ASFW_EMFDevice* USFW_EquipmentManagerComponent::FindEMF() const
 	}
 	return nullptr;
 }
-
 
 // ---------- Server RPCs ----------
 
@@ -177,7 +174,7 @@ void USFW_EquipmentManagerComponent::Server_AddItemToInventory_Implementation(AS
 	if (bAutoEquipIfHandEmpty && ActiveHandItem == nullptr)
 	{
 		ActiveHandItem = Item;
-		HeldItem = EHeldItemType::Flashlight; // temp
+		HeldItem = EHeldItemType::Flashlight; // temp mapping
 		Equip = EEquipState::Holding;
 
 		UE_LOG(LogTemp, Log, TEXT("[EquipMgr] Auto-equipped %s as ActiveHandItem"), *Item->GetName());
@@ -195,8 +192,7 @@ void USFW_EquipmentManagerComponent::Server_EquipSlot_Implementation(int32 SlotI
 
 	ActiveHandItem = Candidate;
 
-	// TEMP mapping until items report their type
-	HeldItem = EHeldItemType::Flashlight;
+	HeldItem = EHeldItemType::Flashlight; // temp mapping
 	Equip = EEquipState::Holding;
 
 	ApplyActiveVisuals();
@@ -213,12 +209,17 @@ void USFW_EquipmentManagerComponent::Server_UnequipActive_Implementation()
 
 void USFW_EquipmentManagerComponent::Server_DropActive_Implementation()
 {
-	if (!ActiveHandItem) return;
+	if (!ActiveHandItem || !OwnerChar)
+	{
+		return;
+	}
+
+	ASFW_EquippableBase* Dropped = ActiveHandItem;
 
 	// Remove from inventory
 	for (int32 i = 0; i < kMaxInventorySlots; ++i)
 	{
-		if (Inventory[i] == ActiveHandItem)
+		if (Inventory[i] == Dropped)
 		{
 			ClearSlot_Internal(i);
 			break;
@@ -229,29 +230,41 @@ void USFW_EquipmentManagerComponent::Server_DropActive_Implementation()
 	HeldItem = EHeldItemType::None;
 	Equip = EEquipState::Idle;
 
-	// (Future: spawn pickup actor with physics here)
+	ApplyActiveVisuals(); // unequips remaining items, not the dropped one
 
-	ApplyActiveVisuals();
+	// Compute drop location + toss from camera / eyes
+	FVector EyeLoc;
+	FRotator EyeRot;
+	OwnerChar->GetActorEyesViewPoint(EyeLoc, EyeRot);
+
+	const FVector Forward = EyeRot.Vector();
+	const FVector DropLocation = EyeLoc + Forward * 80.f - FVector(0.f, 0.f, 20.f);
+	const FVector TossVelocity = Forward * 400.f + FVector(0.f, 0.f, 200.f);
+
+	// No longer owned for relevancy
+	Dropped->SetOwner(nullptr);
+
+	// Let the item configure its physics and visuals
+	Dropped->OnDropped(DropLocation, TossVelocity);
 }
 
 void USFW_EquipmentManagerComponent::UseActiveLocal()
 {
-	// Nothing equipped yet. Do nothing.
 	if (!ActiveHandItem)
 	{
 		return;
 	}
 
-	// We have an item in hand. Now it's a real use.
 	UE_LOG(LogTemp, Log, TEXT("UseActiveLocal: Using %s"), *ActiveHandItem->GetName());
 
-	ActiveHandItem->PrimaryUse(); // item handles its own RPC if needed
+	ActiveHandItem->PrimaryUse();
 }
 
 void USFW_EquipmentManagerComponent::Server_ToggleHeadLamp_Implementation()
 {
 	if (ASFW_HeadLamp* Lamp = Cast<ASFW_HeadLamp>(HeadLampRef))
 	{
-		Lamp->ToggleLamp(); // headlamp replicates state internally
+		Lamp->ToggleLamp();
 	}
 }
+

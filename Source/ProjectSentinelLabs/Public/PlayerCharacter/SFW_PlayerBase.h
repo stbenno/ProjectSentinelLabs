@@ -91,6 +91,9 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Input")
 	UInputAction* IA_Use = nullptr;
 
+	UPROPERTY(EditDefaultsOnly, Category = "Input")
+	UInputAction* IA_Drop = nullptr;
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Interact")
 	TObjectPtr<USFW_InteractionComponent> Interaction = nullptr;
 
@@ -105,6 +108,9 @@ protected:
 
 	UFUNCTION(Server, Reliable)
 	void Server_Interact(AActor* Target);
+
+	UFUNCTION()
+	void DropStarted(const FInputActionValue& Value);
 
 	// ---- Voice Chat Input ----
 	// Local / proximity push-to-talk

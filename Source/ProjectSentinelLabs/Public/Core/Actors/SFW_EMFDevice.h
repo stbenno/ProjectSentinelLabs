@@ -1,6 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
-// Fill out your copyright notice in the Description page of Project Settings.
+
+// SFW_EMFDevice.h
 
 #pragma once
 
@@ -13,13 +14,11 @@ class UStaticMeshComponent;
 class UAudioComponent;
 class USoundBase;
 class UMaterialInstanceDynamic;
-class ACharacter;
 
 /**
  * Handheld EMF meter.
  * PrimaryUse() toggles power on the server.
  * EMFLevel (0..5) drives LED brightness.
- * LED[0] stays lit when active as "power on".
  */
 UCLASS()
 class PROJECTSENTINELLABS_API ASFW_EMFDevice : public ASFW_EquippableBase
@@ -34,6 +33,9 @@ public:
 	// When equipped in hand
 	virtual void OnEquipped(ACharacter* NewOwnerChar) override;
 	virtual void OnUnequipped() override;
+
+	// Optional: keep base physics drop but ensure visuals are visible when dropped
+	virtual void OnDropped(const FVector& DropLocation, const FVector& TossVelocity) override;
 
 	// Player pressed IA_Use while this is active in hand
 	virtual void PrimaryUse() override;
@@ -67,9 +69,12 @@ public:
 protected:
 	// ---- Components ----
 
-	// Visual body mesh. You attach BP static meshes under this.
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "EMF")
-	TObjectPtr<UStaticMeshComponent> EMFMesh;
+	/** Visual body mesh. BPs attach EMF LEDs and details under this. */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	UStaticMeshComponent* EMFMesh;
+
+	/** Which component should simulate physics when dropped. */
+	virtual UPrimitiveComponent* GetPhysicsComponent() const override;
 
 	// Looping hum / crackle while active (owner-local)
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "EMF")
@@ -101,7 +106,6 @@ protected:
 	// ---- LED / visual runtime control ----
 
 	// Dynamic material instances for each LED bulb.
-	// Index 0 = low/green ... index 4 = high/red
 	UPROPERTY(Transient)
 	TArray<TObjectPtr<UMaterialInstanceDynamic>> LEDMIDs;
 
@@ -132,7 +136,7 @@ protected:
 	UPROPERTY()
 	float BurstEndTime = 0.f;
 
-	// Which socket to attach to on the character mesh
+	// Socket to attach to on the character mesh
 	virtual FName GetAttachSocketName() const override
 	{
 		return TEXT("hand_R_EMF");
@@ -141,5 +145,3 @@ protected:
 public:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 };
-
-

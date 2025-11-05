@@ -132,6 +132,11 @@ void ASFW_PlayerBase::SetupPlayerInputComponent(UInputComponent* PlayerInputComp
 			EIC->BindAction(IA_Use, ETriggerEvent::Started, this, &ASFW_PlayerBase::UseStarted);
 		}
 
+		if (IA_Drop)
+		{
+			EIC->BindAction(IA_Drop, ETriggerEvent::Started, this, &ASFW_PlayerBase::DropStarted);
+		}
+
 		// Voice: Local / proximity push-to-talk
 		if (IA_PTT_Local)
 		{
@@ -147,6 +152,8 @@ void ASFW_PlayerBase::SetupPlayerInputComponent(UInputComponent* PlayerInputComp
 			EIC->BindAction(IA_PTT_Radio, ETriggerEvent::Completed, this, &ASFW_PlayerBase::RadioPTT_Released);
 			EIC->BindAction(IA_PTT_Radio, ETriggerEvent::Canceled, this, &ASFW_PlayerBase::RadioPTT_Released);
 		}
+
+
 	}
 }
 
@@ -265,6 +272,14 @@ void ASFW_PlayerBase::UseStarted(const FInputActionValue& Value)
 	if (auto* Equip = FindComponentByClass<USFW_EquipmentManagerComponent>())
 	{
 		Equip->UseActiveLocal();
+	}
+}
+
+void ASFW_PlayerBase::DropStarted(const FInputActionValue& Value)
+{
+	if (EquipmentManager)
+	{
+		EquipmentManager->Server_DropActive();
 	}
 }
 
