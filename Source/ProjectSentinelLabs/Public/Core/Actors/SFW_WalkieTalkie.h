@@ -6,6 +6,9 @@
 #include "Core/Actors/SFW_EquippableBase.h"
 #include "SFW_WalkieTalkie.generated.h"
 
+class UStaticMeshComponent;
+class UPrimitiveComponent;
+
 /**
  * Handheld radio. Owning this in inventory allows long-range comms.
  * Holding it (PrimaryUse) will later key radio transmit.
@@ -21,19 +24,23 @@ public:
 	// This item grants access to radio comms
 	virtual bool GrantsRadioComms_Implementation() const override { return true; }
 
-	// Override socket if you want a specific grip pose for radio
-	// You can change this socket name in editor/skeleton later
-	virtual FName GetAttachSocketName() const override
-	{
-		return TEXT("hand_R_EMF"); // or "SCK_Hand_R_Radio" once you add that socket
-	}
-
-	// Called when player "uses" the walkie (press IA_Use while it's the active hand item)
+	// Called when player "uses" the walkie (press IA_Use while it's active hand item)
 	virtual void PrimaryUse() override;
 
+	// Anim type override
+	virtual EHeldItemType GetAnimHeldType_Implementation() const override;
+
 protected:
-	// later: audio component for active transmit beep, speaker sound, etc
-	// UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Walkie")
-	// TObjectPtr<UAudioComponent> RadioAudio;
+	// Visible / physical body
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Walkie")
+	TObjectPtr<UStaticMeshComponent> WalkieMesh;
+
+	// Which component should get physics when dropped.
+	virtual UPrimitiveComponent* GetPhysicsComponent() const override;
+
+	// Equip / unequip hooks to manage physics and visibility
+	virtual void OnEquipped(ACharacter* NewOwnerChar) override;
+	virtual void OnUnequipped() override;
 };
+
 

@@ -1,6 +1,3 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
-
 #include "PlayerCharacter/SFW_PlayerBase.h"
 #include "Net/UnrealNetwork.h"
 #include "Camera/CameraComponent.h"
@@ -14,11 +11,9 @@
 #include "Core/Components/SFW_EquipmentManagerComponent.h"
 #include "Core/Interact/SFW_InteractionComponent.h"
 
-// Sets default values
 ASFW_PlayerBase::ASFW_PlayerBase()
 {
 	PrimaryActorTick.bCanEverTick = true;
-
 	bReplicates = true;
 
 	// Capsule
@@ -30,12 +25,13 @@ ASFW_PlayerBase::ASFW_PlayerBase()
 	bUseControllerRotationRoll = false;
 	GetCharacterMovement()->bOrientRotationToMovement = false;
 
-	// Movement Speed
-	GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
-	bIsCrouched = false;
+	// Movement speeds
+	UCharacterMovementComponent* Move = GetCharacterMovement();
+	Move->MaxWalkSpeed = WalkSpeed;
+	Move->MaxWalkSpeedCrouched = CrouchSpeed;
+	Move->NavAgentProps.bCanCrouch = true;
 
-	// Enable crouch
-	GetCharacterMovement()->NavAgentProps.bCanCrouch = true;
+	bIsCrouched = false; // from ACharacter
 
 	// Camera
 	FirstPersonCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FirstPersonCamera"));
@@ -65,9 +61,10 @@ ASFW_PlayerBase::ASFW_PlayerBase()
 void ASFW_PlayerBase::BeginPlay()
 {
 	Super::BeginPlay();
+
 	UpdateMeshVisibility();
 
-	// Init movement speed
+	// Init movement speed (walk vs sprint)
 	ApplyMovementSpeed();
 
 	if (APlayerController* PC = Cast<APlayerController>(Controller))
@@ -83,9 +80,6 @@ void ASFW_PlayerBase::BeginPlay()
 			}
 		}
 	}
-
-	// Ensure sprint speed is respected at spawn
-	GetCharacterMovement()->MaxWalkSpeed = bWantsToSprint ? SprintSpeed : WalkSpeed;
 }
 
 void ASFW_PlayerBase::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -95,8 +89,8 @@ void ASFW_PlayerBase::SetupPlayerInputComponent(UInputComponent* PlayerInputComp
 	if (UEnhancedInputComponent* EIC = Cast<UEnhancedInputComponent>(PlayerInputComponent))
 	{
 		// Movement axes
-		if (IA_Move) EIC->BindAction(IA_Move, ETriggerEvent::Triggered, this, &ASFW_PlayerBase::Move);
-		if (IA_Look) EIC->BindAction(IA_Look, ETriggerEvent::Triggered, this, &ASFW_PlayerBase::Look);
+		if (IA_Move)  EIC->BindAction(IA_Move, ETriggerEvent::Triggered, this, &ASFW_PlayerBase::Move);
+		if (IA_Look)  EIC->BindAction(IA_Look, ETriggerEvent::Triggered, this, &ASFW_PlayerBase::Look);
 
 		// Sprint
 		if (IA_Sprint)
@@ -126,18 +120,25 @@ void ASFW_PlayerBase::SetupPlayerInputComponent(UInputComponent* PlayerInputComp
 			EIC->BindAction(IA_ToggleHeadLamp, ETriggerEvent::Started, this, &ASFW_PlayerBase::HandleToggleHeadLamp);
 		}
 
-		// Use active item (flashlight toggle, spirit box, etc)
+		// Use active item
 		if (IA_Use)
 		{
 			EIC->BindAction(IA_Use, ETriggerEvent::Started, this, &ASFW_PlayerBase::UseStarted);
 		}
 
+		// Drop active item
 		if (IA_Drop)
 		{
 			EIC->BindAction(IA_Drop, ETriggerEvent::Started, this, &ASFW_PlayerBase::DropStarted);
 		}
 
-		// Voice: Local / proximity push-to-talk
+		// New: Place active item (REM-POD etc.)
+		if (IA_Place)
+		{
+			EIC->BindAction(IA_Place, ETriggerEvent::Started, this, &ASFW_PlayerBase::PlaceStarted);
+		}
+
+		// Voice: Local PTT
 		if (IA_PTT_Local)
 		{
 			EIC->BindAction(IA_PTT_Local, ETriggerEvent::Started, this, &ASFW_PlayerBase::LocalPTT_Pressed);
@@ -145,7 +146,7 @@ void ASFW_PlayerBase::SetupPlayerInputComponent(UInputComponent* PlayerInputComp
 			EIC->BindAction(IA_PTT_Local, ETriggerEvent::Canceled, this, &ASFW_PlayerBase::LocalPTT_Released);
 		}
 
-		// Voice: Radio / walkie push-to-talk
+		// Voice: Radio PTT
 		if (IA_PTT_Radio)
 		{
 			EIC->BindAction(IA_PTT_Radio, ETriggerEvent::Started, this, &ASFW_PlayerBase::RadioPTT_Pressed);
@@ -153,7 +154,19 @@ void ASFW_PlayerBase::SetupPlayerInputComponent(UInputComponent* PlayerInputComp
 			EIC->BindAction(IA_PTT_Radio, ETriggerEvent::Canceled, this, &ASFW_PlayerBase::RadioPTT_Released);
 		}
 
-
+		// Equipment: select inventory slot 1/2/3
+		if (IA_EquipSlot1)
+		{
+			EIC->BindAction(IA_EquipSlot1, ETriggerEvent::Started, this, &ASFW_PlayerBase::EquipSlot1);
+		}
+		if (IA_EquipSlot2)
+		{
+			EIC->BindAction(IA_EquipSlot2, ETriggerEvent::Started, this, &ASFW_PlayerBase::EquipSlot2);
+		}
+		if (IA_EquipSlot3)
+		{
+			EIC->BindAction(IA_EquipSlot3, ETriggerEvent::Started, this, &ASFW_PlayerBase::EquipSlot3);
+		}
 	}
 }
 
@@ -174,12 +187,8 @@ void ASFW_PlayerBase::ApplyMovementSpeed()
 	UCharacterMovementComponent* Move = GetCharacterMovement();
 	if (!Move) return;
 
-	if (Move->IsCrouching())
-	{
-		Move->MaxWalkSpeed = CrouchSpeed;
-		return;
-	}
-
+	// Only control stand/sprint speed here.
+	// Crouched speed uses MaxWalkSpeedCrouched automatically.
 	Move->MaxWalkSpeed = bWantsToSprint ? SprintSpeed : WalkSpeed;
 }
 
@@ -200,11 +209,11 @@ void ASFW_PlayerBase::Move(const FInputActionValue& Value)
 	if (!Controller || Axis2D.IsNearlyZero()) return;
 
 	const FRotator YawRot(0.f, Controller->GetControlRotation().Yaw, 0.f);
-	const FVector Fwd = FRotationMatrix(YawRot).GetUnitAxis(EAxis::X);
-	const FVector Rt = FRotationMatrix(YawRot).GetUnitAxis(EAxis::Y);
+	const FVector  Fwd = FRotationMatrix(YawRot).GetUnitAxis(EAxis::X);
+	const FVector  Rt = FRotationMatrix(YawRot).GetUnitAxis(EAxis::Y);
 
 	AddMovementInput(Fwd, Axis2D.Y); // Y = forward/back
-	AddMovementInput(Rt, Axis2D.X); // X = right/left
+	AddMovementInput(Rt, Axis2D.X);  // X = right/left
 }
 
 void ASFW_PlayerBase::Look(const FInputActionValue& Value)
@@ -226,6 +235,30 @@ void ASFW_PlayerBase::SprintCompleted(const FInputActionValue& Value)
 	bWantsToSprint = false;
 	ApplyMovementSpeed();               // local prediction
 	if (!HasAuthority()) ServerSetSprint(false);
+}
+
+void ASFW_PlayerBase::EquipSlot1(const FInputActionValue& Value)
+{
+	if (EquipmentManager)
+	{
+		EquipmentManager->Server_EquipSlot(0);
+	}
+}
+
+void ASFW_PlayerBase::EquipSlot2(const FInputActionValue& Value)
+{
+	if (EquipmentManager)
+	{
+		EquipmentManager->Server_EquipSlot(1);
+	}
+}
+
+void ASFW_PlayerBase::EquipSlot3(const FInputActionValue& Value)
+{
+	if (EquipmentManager)
+	{
+		EquipmentManager->Server_EquipSlot(2);
+	}
 }
 
 void ASFW_PlayerBase::UpdateMeshVisibility()
@@ -283,6 +316,14 @@ void ASFW_PlayerBase::DropStarted(const FInputActionValue& Value)
 	}
 }
 
+void ASFW_PlayerBase::PlaceStarted(const FInputActionValue& Value)
+{
+	if (EquipmentManager)
+	{
+		EquipmentManager->Server_PlaceActive();
+	}
+}
+
 void ASFW_PlayerBase::HandleToggleHeadLamp(const FInputActionValue& Value)
 {
 	if (USFW_EquipmentManagerComponent* Mgr = FindComponentByClass<USFW_EquipmentManagerComponent>())
@@ -300,8 +341,6 @@ void ASFW_PlayerBase::LocalPTT_Pressed(const FInputActionValue& Value)
 	{
 		Server_SetLocalPTT(true);
 	}
-
-	// future: start sending proximity voice stream
 }
 
 void ASFW_PlayerBase::LocalPTT_Released(const FInputActionValue& Value)
@@ -311,13 +350,10 @@ void ASFW_PlayerBase::LocalPTT_Released(const FInputActionValue& Value)
 	{
 		Server_SetLocalPTT(false);
 	}
-
-	// future: stop sending proximity voice stream
 }
 
 void ASFW_PlayerBase::RadioPTT_Pressed(const FInputActionValue& Value)
 {
-	// Require that this player actually has radio-capable gear
 	bool bCanRadio = false;
 	if (EquipmentManager)
 	{
@@ -326,7 +362,6 @@ void ASFW_PlayerBase::RadioPTT_Pressed(const FInputActionValue& Value)
 
 	if (!bCanRadio)
 	{
-		// no walkie / no radio access -> ignore input
 		return;
 	}
 
@@ -335,13 +370,10 @@ void ASFW_PlayerBase::RadioPTT_Pressed(const FInputActionValue& Value)
 	{
 		Server_SetRadioPTT(true);
 	}
-
-	// future: start sending radio voice stream
 }
 
 void ASFW_PlayerBase::RadioPTT_Released(const FInputActionValue& Value)
 {
-	// Only bother clearing if we were actually talking
 	if (bIsRadioPTTActive)
 	{
 		bIsRadioPTTActive = false;
@@ -349,8 +381,6 @@ void ASFW_PlayerBase::RadioPTT_Released(const FInputActionValue& Value)
 		{
 			Server_SetRadioPTT(false);
 		}
-
-		// future: stop sending radio voice stream
 	}
 }
 
@@ -369,8 +399,6 @@ void ASFW_PlayerBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(ASFW_PlayerBase, bWantsToSprint);
-
-	// voice talk state
 	DOREPLIFETIME(ASFW_PlayerBase, bIsLocalPTTActive);
 	DOREPLIFETIME(ASFW_PlayerBase, bIsRadioPTTActive);
 }

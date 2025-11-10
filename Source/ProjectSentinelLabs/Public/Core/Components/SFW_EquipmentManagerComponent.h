@@ -1,5 +1,3 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 // SFW_EquipmentManagerComponent.h
 
 #pragma once
@@ -93,6 +91,20 @@ public:
 	UFUNCTION(Server, Reliable)
 	void Server_DropActive();
 
+	/** New: place the current active item (for REM-POD etc.). */
+	UFUNCTION(Server, Reliable)
+	void Server_PlaceActive();
+
+	// Optional tunables
+	UPROPERTY(EditDefaultsOnly, Category = "Equipment|Place")
+	float PlaceTraceDistance = 250.f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Equipment|Place")
+	float MaxPlaceSlopeDegrees = 40.f;   // how steep is still "flat"
+
+	UPROPERTY(EditDefaultsOnly, Category = "Equipment|Place")
+	float PlaceHeightOffset = 2.f;       // small lift off the surface
+
 	/** Assign headlamp actor after pickup. */
 	UFUNCTION(BlueprintCallable, Category = "Equipment")
 	void SetHeadLamp(ASFW_EquippableBase* InHeadLamp);
@@ -117,7 +129,7 @@ private:
 	bool SetItemInSlot_Internal(int32 Index, ASFW_EquippableBase* Item);
 	bool ClearSlot_Internal(int32 Index);
 
-	/** Cached owner character (used for attachment). */
+	/** Cached owner character (used for attachment and traces). */
 	UPROPERTY()
 	TObjectPtr<ACharacter> OwnerChar = nullptr;
 };

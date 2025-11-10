@@ -3,36 +3,43 @@
 // SFW_Flashlight.cpp
 
 #include "Core/Actors/SFW_Flashlight.h"
+
 #include "Components/StaticMeshComponent.h"
 #include "Components/SpotLightComponent.h"
 #include "GameFramework/Character.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
+#include "Components/PrimitiveComponent.h"
 
 ASFW_Flashlight::ASFW_Flashlight()
 {
 	PrimaryActorTick.bCanEverTick = false;
 	bReplicates = true;
 
-	// Visible mesh
+	// Visible mesh (physics body for drop)
 	FlashlightMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("FlashlightMesh"));
-	FlashlightMesh->SetupAttachment(GetMesh());                 // GetMesh() is the root from EquippableBase
+	FlashlightMesh->SetupAttachment(GetMesh());                 // GetMesh() is the root SkeletalMesh from EquippableBase
 	FlashlightMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	FlashlightMesh->SetCastShadow(true);
 	FlashlightMesh->SetIsReplicated(true);
 	FlashlightMesh->SetVisibility(true, true);
 
-	// Light (no function calls that might assume registration)
+	EquipSlot = ESFWEquipSlot::Hand_Light;
+
+	// Light
 	Spot = CreateDefaultSubobject<USpotLightComponent>(TEXT("Spot"));
 	Spot->SetupAttachment(FlashlightMesh);
 	Spot->Mobility = EComponentMobility::Movable;
+	Spot->IntensityUnits = IntensityUnits;
 	Spot->bUseInverseSquaredFalloff = false;
-	Spot->AttenuationRadius = 1400.f;
+	Spot->AttenuationRadius = AttenuationRadius;
 	Spot->Intensity = 0.f;                 // start OFF
-	Spot->InnerConeAngle = 16.f;
-	Spot->OuterConeAngle = 28.f;
+	Spot->InnerConeAngle = InnerCone;
+	Spot->OuterConeAngle = OuterCone;
 	Spot->SetVisibility(false, true);
+
+	bIsOn = false;
 }
 
 void ASFW_Flashlight::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -41,48 +48,63 @@ void ASFW_Flashlight::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
 	DOREPLIFETIME(ASFW_Flashlight, bIsOn);
 }
 
-USkeletalMeshComponent* ASFW_Flashlight::ResolveOwnerMesh(ACharacter* InChar) const
+UPrimitiveComponent* ASFW_Flashlight::GetPhysicsComponent() const
 {
-	return InChar ? InChar->GetMesh() : nullptr; // 3P mesh for everyone
+	// Use the static mesh as the physics body for drop / pickup
+	return FlashlightMesh ? FlashlightMesh : Super::GetPhysicsComponent();
 }
 
 void ASFW_Flashlight::OnEquipped(ACharacter* NewOwnerChar)
 {
-	if (USkeletalMeshComponent* OwnerMesh = ResolveOwnerMesh(NewOwnerChar))
+	// Base handles attach + hiding root, and clears physics on root
+	Super::OnEquipped(NewOwnerChar);
+
+	// Ensure flashlight body is non-physical while in hand
+	if (FlashlightMesh)
 	{
-		FAttachmentTransformRules Rules(EAttachmentRule::SnapToTarget, true);
-		AttachToComponent(OwnerMesh, Rules, FName(TEXT("hand_R_Tool")));
+		FlashlightMesh->SetSimulatePhysics(false);
+		FlashlightMesh->SetEnableGravity(false);
+		FlashlightMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		FlashlightMesh->SetVisibility(true, true);
 	}
 
-	SetActorHiddenInGame(false);
-	SetActorEnableCollision(false);
-
 	ApplyLightState();
-	Super::OnEquipped(NewOwnerChar);
 }
 
 void ASFW_Flashlight::OnUnequipped()
 {
+	// Turn off beam
 	if (Spot)
 	{
 		Spot->SetVisibility(false);
 		Spot->SetIntensity(0.f);
 	}
-	SetActorHiddenInGame(true);
-	SetActorEnableCollision(false);
+
+	// Also ensure we are not simulating while hidden in inventory
+	if (FlashlightMesh)
+	{
+		FlashlightMesh->SetSimulatePhysics(false);
+		FlashlightMesh->SetEnableGravity(false);
+		FlashlightMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	}
 
 	Super::OnUnequipped();
 }
 
 void ASFW_Flashlight::PrimaryUse()
 {
-	UE_LOG(LogTemp, Warning, TEXT("Flashlight::PrimaryUse (On=%d)"), bIsOn ? 1 : 0);
+	UE_LOG(LogTemp, Log, TEXT("Flashlight::PrimaryUse (On=%d)"), bIsOn ? 1 : 0);
 	ToggleLight();
+}
+
+EHeldItemType ASFW_Flashlight::GetAnimHeldType_Implementation() const
+{
+	return EHeldItemType::Flashlight;
 }
 
 void ASFW_Flashlight::ToggleLight()
 {
-	UE_LOG(LogTemp, Warning, TEXT("Flashlight::ToggleLight -> %s"), bIsOn ? TEXT("OFF") : TEXT("ON"));
+	UE_LOG(LogTemp, Log, TEXT("Flashlight::ToggleLight -> %s"), bIsOn ? TEXT("OFF") : TEXT("ON"));
 	SetLightEnabled(!bIsOn);
 }
 
@@ -114,6 +136,7 @@ void ASFW_Flashlight::OnRep_IsOn()
 void ASFW_Flashlight::ApplyLightState()
 {
 	const bool bVis = bIsOn;
+
 	if (Spot)
 	{
 		Spot->SetVisibility(bVis);
@@ -121,6 +144,13 @@ void ASFW_Flashlight::ApplyLightState()
 		Spot->SetInnerConeAngle(InnerCone);
 		Spot->SetOuterConeAngle(OuterCone);
 		Spot->SetAttenuationRadius(AttenuationRadius);
+
+		if (IESProfile)
+		{
+			Spot->SetIESTexture(IESProfile);
+			Spot->bUseIESBrightness = bUseIESBrightness;
+			Spot->IESBrightnessScale = IESBrightnessScale;
+		}
 	}
 }
 

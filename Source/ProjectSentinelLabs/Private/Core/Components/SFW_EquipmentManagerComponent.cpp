@@ -1,5 +1,3 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 // SFW_EquipmentManagerComponent.cpp
 
 #include "Core/Components/SFW_EquipmentManagerComponent.h"
@@ -9,7 +7,11 @@
 #include "Core/Actors/SFW_EMFDevice.h"
 
 #include "GameFramework/Character.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "Net/UnrealNetwork.h"
+#include "Engine/World.h"
+#include "Engine/EngineTypes.h"
+#include "DrawDebugHelpers.h"
 
 USFW_EquipmentManagerComponent::USFW_EquipmentManagerComponent()
 {
@@ -174,7 +176,9 @@ void USFW_EquipmentManagerComponent::Server_AddItemToInventory_Implementation(AS
 	if (bAutoEquipIfHandEmpty && ActiveHandItem == nullptr)
 	{
 		ActiveHandItem = Item;
-		HeldItem = EHeldItemType::Flashlight; // temp mapping
+		HeldItem = ActiveHandItem
+			? ActiveHandItem->GetAnimHeldType()
+			: EHeldItemType::None;
 		Equip = EEquipState::Holding;
 
 		UE_LOG(LogTemp, Log, TEXT("[EquipMgr] Auto-equipped %s as ActiveHandItem"), *Item->GetName());
@@ -192,8 +196,10 @@ void USFW_EquipmentManagerComponent::Server_EquipSlot_Implementation(int32 SlotI
 
 	ActiveHandItem = Candidate;
 
-	HeldItem = EHeldItemType::Flashlight; // temp mapping
-	Equip = EEquipState::Holding;
+	HeldItem = ActiveHandItem
+		? ActiveHandItem->GetAnimHeldType()
+		: EHeldItemType::None;
+	Equip = ActiveHandItem ? EEquipState::Holding : EEquipState::Idle;
 
 	ApplyActiveVisuals();
 }
@@ -239,13 +245,110 @@ void USFW_EquipmentManagerComponent::Server_DropActive_Implementation()
 
 	const FVector Forward = EyeRot.Vector();
 	const FVector DropLocation = EyeLoc + Forward * 80.f - FVector(0.f, 0.f, 20.f);
-	const FVector TossVelocity = Forward * 400.f + FVector(0.f, 0.f, 200.f);
+	const FVector TossVelocity = Forward * 150.f + FVector(0.f, 0.f, 50.f);
 
 	// No longer owned for relevancy
 	Dropped->SetOwner(nullptr);
 
-	// Let the item configure its physics and visuals
-	Dropped->OnDropped(DropLocation, TossVelocity);
+	// Let the item configure its physics and visuals on all peers
+	Dropped->Multicast_OnDropped(DropLocation, TossVelocity);
+}
+
+// In SFW_EquipmentManagerComponent.cpp
+
+void USFW_EquipmentManagerComponent::Server_PlaceActive_Implementation()
+{
+	if (!OwnerChar || !ActiveHandItem)
+	{
+		return;
+	}
+
+	// Only allow items that opt into placement (REMPod returns true)
+	if (!ActiveHandItem->CanBePlaced())
+	{
+		return;
+	}
+
+	UWorld* World = GetWorld();
+	if (!World)
+	{
+		return;
+	}
+
+	// 1) Trace from eyes forward
+	FVector EyeLoc;
+	FRotator EyeRot;
+	OwnerChar->GetActorEyesViewPoint(EyeLoc, EyeRot);
+
+	const FVector Start = EyeLoc;
+	const FVector End = Start + EyeRot.Vector() * PlaceTraceDistance;
+
+	FHitResult Hit;
+	FCollisionQueryParams Params(SCENE_QUERY_STAT(PlaceItem), false, OwnerChar);
+
+	if (!World->LineTraceSingleByChannel(Hit, Start, End, ECC_Visibility, Params))
+	{
+		// nothing hit -> invalid placement
+		return;
+	}
+
+	// 2) Filter to world geometry only (so you can't place on players / items)
+	ECollisionChannel HitChannel = ECC_WorldStatic;
+	if (Hit.Component.IsValid())
+	{
+		HitChannel = Hit.Component->GetCollisionObjectType();
+	}
+
+	if (HitChannel != ECC_WorldStatic && HitChannel != ECC_WorldDynamic)
+	{
+		return; // not ground / level geometry
+	}
+
+	// 3) Check surface slope vs world up
+	const FVector Normal = Hit.ImpactNormal.GetSafeNormal();
+	const float DotUp = FVector::DotProduct(Normal, FVector::UpVector);
+
+	const float CosMaxSlope =
+		FMath::Cos(FMath::DegreesToRadians(MaxPlaceSlopeDegrees));
+
+	if (DotUp < CosMaxSlope)
+	{
+		// too steep -> e.g. wall, stairs, sharp slope
+		return;
+	}
+
+	// 4) Build final placement transform
+	const FVector PlaceLocation = Hit.Location + Normal * PlaceHeightOffset;
+
+	// Keep item upright in world, yaw aligned to character
+	const FRotator PlaceRot(0.f, OwnerChar->GetActorRotation().Yaw, 0.f);
+
+	FTransform PlaceXform;
+	PlaceXform.SetLocation(PlaceLocation);
+	PlaceXform.SetRotation(PlaceRot.Quaternion());
+	PlaceXform.SetScale3D(FVector::OneVector);
+
+	// 5) Let the item transition into "placed" state
+	// Use whatever you already call here:
+	// - if you made a multicast: ActiveHandItem->Multicast_OnPlaced(PlaceXform);
+	// - if you just had OnPlaced and call it on server then replicate state, do that instead.
+	ActiveHandItem->OnPlaced(PlaceXform);
+
+	// 6) Remove from inventory / hand
+	for (int32 i = 0; i < kMaxInventorySlots; ++i)
+	{
+		if (Inventory[i] == ActiveHandItem)
+		{
+			ClearSlot_Internal(i);
+			break;
+		}
+	}
+
+	ActiveHandItem = nullptr;
+	HeldItem = EHeldItemType::None;
+	Equip = EEquipState::Idle;
+
+	ApplyActiveVisuals();
 }
 
 void USFW_EquipmentManagerComponent::UseActiveLocal()
@@ -267,4 +370,3 @@ void USFW_EquipmentManagerComponent::Server_ToggleHeadLamp_Implementation()
 		Lamp->ToggleLamp();
 	}
 }
-

@@ -12,6 +12,8 @@
 class UStaticMeshComponent;
 class USpotLightComponent;
 class USoundBase;
+class UTextureLightProfile;
+class UPrimitiveComponent;
 
 /** Replicated handheld flashlight. One spotlight on the flashlight actor, toggled on Use. */
 UCLASS()
@@ -27,6 +29,9 @@ public:
 	virtual void OnUnequipped() override;
 	virtual void PrimaryUse() override;
 
+	// Anim type override
+	virtual EHeldItemType GetAnimHeldType_Implementation() const override;
+
 	// Toggle API
 	UFUNCTION(BlueprintCallable, Category = "Flashlight")
 	void ToggleLight();
@@ -38,8 +43,7 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Flashlight")
 	bool IsOn() const { return bIsOn; }
 
-	UFUNCTION(BlueprintPure, Category = "Flashlight")
-	EHeldItemType GetItemType() const { return EHeldItemType::Flashlight; }
+	
 
 protected:
 	// Components
@@ -50,7 +54,6 @@ protected:
 	TObjectPtr<USpotLightComponent> Spot;
 
 	// IES Profile
-	// Light | Photometric
 	UPROPERTY(EditDefaultsOnly, Category = "Light|Photometric")
 	TObjectPtr<UTextureLightProfile> IESProfile = nullptr;
 
@@ -66,9 +69,9 @@ protected:
 
 	// Recommended game-ish defaults
 	UPROPERTY(EditDefaultsOnly, Category = "Light|Photometric")
-	float OnIntensity = 900.f;        // ~900 lm flashlight beam (start here)
+	float OnIntensity = 900.f;        // ~900 lm flashlight beam
 	UPROPERTY(EditDefaultsOnly, Category = "Light|Photometric")
-	float AttenuationRadius = 2200.f; // falloff distance
+	float AttenuationRadius = 2200.f;
 	UPROPERTY(EditDefaultsOnly, Category = "Light|Photometric")
 	float InnerCone = 12.f;
 	UPROPERTY(EditDefaultsOnly, Category = "Light|Photometric")
@@ -77,9 +80,6 @@ protected:
 	// Replicated state
 	UPROPERTY(ReplicatedUsing = OnRep_IsOn)
 	bool bIsOn = false;
-
-	// Tuning
-	
 
 	// SFX
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Flashlight|SFX")
@@ -100,9 +100,13 @@ protected:
 	UFUNCTION(NetMulticast, Unreliable)
 	void Multicast_PlayToggleSFX(bool bEnable);
 
+	// Which component should get physics when dropped.
+	virtual UPrimitiveComponent* GetPhysicsComponent() const override;
+
+	
+
 private:
 	void ApplyLightState();
-	USkeletalMeshComponent* ResolveOwnerMesh(ACharacter* InChar) const;
 
 public:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;

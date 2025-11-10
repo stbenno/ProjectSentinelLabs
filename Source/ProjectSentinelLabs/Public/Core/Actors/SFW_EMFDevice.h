@@ -40,6 +40,9 @@ public:
 	// Player pressed IA_Use while this is active in hand
 	virtual void PrimaryUse() override;
 
+	// Anim type override
+	virtual EHeldItemType GetAnimHeldType_Implementation() const override;
+
 	// ---- Power control ----
 
 	// Blueprint-callable hard set

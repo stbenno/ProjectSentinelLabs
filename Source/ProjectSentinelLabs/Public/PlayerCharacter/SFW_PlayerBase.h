@@ -1,5 +1,3 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #pragma once
 
 #include "CoreMinimal.h"
@@ -50,7 +48,8 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Movement")
 	float CrouchSpeed = 200.f;
 
-	//Helper to set speed from current state
+	// Helper to set speed from current state (walk vs sprint).
+	// Crouch uses MaxWalkSpeedCrouched automatically.
 	void ApplyMovementSpeed();
 
 	// RepNotify for bWantsToSprint
@@ -76,6 +75,19 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Input")
 	UInputAction* IA_Crouch = nullptr;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Input|Equipment")
+	UInputAction* IA_EquipSlot1 = nullptr;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Input|Equipment")
+	UInputAction* IA_EquipSlot2 = nullptr;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Input|Equipment")
+	UInputAction* IA_EquipSlot3 = nullptr;
+
+	// New: place active item (REM-POD etc.)
+	UPROPERTY(EditDefaultsOnly, Category = "Input|Equipment")
+	UInputAction* IA_Place = nullptr;
 
 	// Toggle headlamp
 	UPROPERTY(EditDefaultsOnly, Category = "Input")
@@ -111,6 +123,9 @@ protected:
 
 	UFUNCTION()
 	void DropStarted(const FInputActionValue& Value);
+
+	// New: handler for placing the active item
+	void PlaceStarted(const FInputActionValue& Value);
 
 	// ---- Voice Chat Input ----
 	// Local / proximity push-to-talk
@@ -149,8 +164,15 @@ protected:
 	void Look(const FInputActionValue& Value);
 	void SprintStarted(const FInputActionValue& Value);
 	void SprintCompleted(const FInputActionValue& Value);
-	void CrouchStarted(const FInputActionValue& Value) { Crouch(false); ApplyMovementSpeed(); }
-	void CrouchCompleted(const FInputActionValue& Value) { UnCrouch(false); ApplyMovementSpeed(); }
+
+	// Crouch is just Crouch/UnCrouch; speed is handled by MaxWalkSpeedCrouched.
+	void CrouchStarted(const FInputActionValue& Value) { Crouch(false); }
+	void CrouchCompleted(const FInputActionValue& Value) { UnCrouch(false); }
+
+	// ---- Equipment slot select ----
+	void EquipSlot1(const FInputActionValue& Value);
+	void EquipSlot2(const FInputActionValue& Value);
+	void EquipSlot3(const FInputActionValue& Value);
 
 	// visibility (1P vs 3P meshes etc)
 	void UpdateMeshVisibility();

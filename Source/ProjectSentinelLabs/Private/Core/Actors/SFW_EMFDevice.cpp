@@ -148,6 +148,11 @@ void ASFW_EMFDevice::PrimaryUse()
 	Server_RequestToggle();
 }
 
+EHeldItemType ASFW_EMFDevice::GetAnimHeldType_Implementation() const
+{
+	return EHeldItemType::EMF;
+}
+
 void ASFW_EMFDevice::Server_RequestToggle_Implementation()
 {
 	UE_LOG(LogTemp, Log, TEXT("[EMF] Server_RequestToggle_Implementation. Pre bIsActive=%d"), bIsActive ? 1 : 0);
